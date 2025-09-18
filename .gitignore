@@ -312,3 +312,6 @@ logs
 # Temporary files
 tmp/
 temp/
+
+# BMAD Framework (external dependency)
+BMAD-METHOD/

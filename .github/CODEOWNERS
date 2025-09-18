@@ -1,0 +1,68 @@
+# CODEOWNERS file for Rembo - Matatu Fleet Management System
+# This file defines who owns different parts of the codebase
+# GitHub will automatically request reviews from code owners when PRs are created
+
+# Global owners - these users will be requested for review on all changes
+* @ngarcell
+
+# Backend Services
+backend/ @ngarcell
+backend/services/ @ngarcell
+backend/services/auth/ @ngarcell
+backend/services/fleet/ @ngarcell
+backend/services/booking/ @ngarcell
+backend/services/payment/ @ngarcell
+backend/services/gps/ @ngarcell
+backend/services/notification/ @ngarcell
+backend/services/reporting/ @ngarcell
+backend/shared/ @ngarcell
+
+# Frontend
+frontend/ @ngarcell
+frontend/src/ @ngarcell
+
+# Infrastructure and DevOps
+docker-compose.yml @ngarcell
+Dockerfile @ngarcell
+backend/services/*/Dockerfile @ngarcell
+infrastructure/ @ngarcell
+.github/ @ngarcell
+.github/workflows/ @ngarcell
+
+# Database
+backend/shared/database/ @ngarcell
+backend/shared/database/init.sql @ngarcell
+
+# Configuration Files
+.env.example @ngarcell
+backend/services/*/requirements.txt @ngarcell
+package.json @ngarcell
+frontend/package.json @ngarcell
+
+# Documentation
+docs/ @ngarcell
+README.md @ngarcell
+CONTRIBUTING.md @ngarcell
+LICENSE @ngarcell
+GITHUB_SETUP_GUIDE.md @ngarcell
+
+# BMAD Framework
+.bmad-core/ @ngarcell
+docs/prd/ @ngarcell
+docs/architecture/ @ngarcell
+docs/epics/ @ngarcell
+docs/stories/ @ngarcell
+
+# Testing
+backend/services/*/tests/ @ngarcell
+tests/ @ngarcell
+backend/services/*/pytest.ini @ngarcell
+
+# Security and Compliance
+.github/workflows/ci.yml @ngarcell
+.github/ISSUE_TEMPLATE/ @ngarcell
+.github/pull_request_template.md @ngarcell
+
+# Scripts and Automation
+scripts/ @ngarcell
+github-setup-commands.sh @ngarcell
