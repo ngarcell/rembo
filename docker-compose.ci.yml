@@ -13,6 +13,11 @@ services:
       - "5432:5432"
     networks:
       - matatu-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d matatu_fleet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Redis for caching and task queue
   redis:
@@ -22,6 +27,11 @@ services:
       - "6379:6379"
     networks:
       - matatu-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   # Auth Service
   auth-service:
@@ -38,8 +48,10 @@ services:
     ports:
       - "8001:8000"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - matatu-network
 

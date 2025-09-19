@@ -162,22 +162,36 @@ jobs:
     - name: Start CI services (postgres, redis, auth)
       run: |
         docker compose -f docker-compose.ci.yml up -d postgres redis auth-service
-        sleep 25
+        echo "Waiting for services to be healthy..."
+        sleep 10
 
     - name: Run integration smoke tests
       run: |
-        # Wait for health endpoint up to ~90s with logs
-        for i in {1..30}; do
+        echo "Checking service health..."
+        docker compose -f docker-compose.ci.yml ps
+
+        # Wait for health endpoint up to ~120s with better diagnostics
+        for i in {1..40}; do
           if curl -fs http://localhost:8001/health > /dev/null; then
-            echo "Health check passed";
+            echo "✅ Health check passed on attempt $i";
+            echo "Testing basic endpoints..."
+            curl -fs http://localhost:8001/docs > /dev/null && echo "✅ API docs accessible"
             exit 0;
           fi
-          echo "Waiting for service to become healthy ($i/30)...";
-          docker compose -f docker-compose.ci.yml logs --tail 50 auth-service || true
+          echo "⏳ Waiting for service to become healthy ($i/40)...";
+          if [ $((i % 10)) -eq 0 ]; then
+            echo "📋 Service logs (last 20 lines):"
+            docker compose -f docker-compose.ci.yml logs --tail 20 auth-service || true
+            echo "📊 Container status:"
+            docker compose -f docker-compose.ci.yml ps || true
+          fi
           sleep 3;
         done
-        echo "Service failed to become healthy in time";
+        echo "❌ Service failed to become healthy in time"
+        echo "📋 Final service logs:"
         docker compose -f docker-compose.ci.yml logs auth-service || true
+        echo "📊 Final container status:"
+        docker compose -f docker-compose.ci.yml ps || true
         exit 1
 
     - name: Cleanup
