@@ -53,7 +53,7 @@ def init_db():
     Initialize database tables
     """
     # Import all models to ensure they are registered
-    from app.models import user_profile  # noqa
+    from app.models import user_profile, fleet, audit_log  # noqa
 
     # Create all tables
     Base.metadata.create_all(bind=engine)
