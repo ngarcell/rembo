@@ -6,7 +6,7 @@ import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 
 from app.core.database import get_db
 from app.middleware.auth_middleware import get_current_user
@@ -39,7 +39,6 @@ class UpdateProfileRequest(BaseModel):
 
     first_name: Optional[str] = Field(None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    email: Optional[EmailStr] = None
 
 
 class UpdateProfileResponse(BaseModel):
