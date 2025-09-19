@@ -10,6 +10,7 @@ from .config import settings
 
 logger = logging.getLogger(__name__)
 
+
 class RedisClient:
     """Redis client wrapper for sync operations"""
 
@@ -21,9 +22,7 @@ class RedisClient:
         """Connect to Redis"""
         if not self._client:
             self._client = redis.from_url(
-                self.redis_url,
-                encoding="utf-8",
-                decode_responses=True
+                self.redis_url, encoding="utf-8", decode_responses=True
             )
         return self._client
 
@@ -32,8 +31,9 @@ class RedisClient:
         if self._client:
             try:
                 self._client.close()
-            except Exception:
-                pass
+            except Exception as e:
+                # Log the exception but don't raise it during cleanup
+                print(f"Warning: Error closing Redis connection: {e}")
             self._client = None
 
     def ping(self) -> bool:
@@ -115,6 +115,7 @@ class RedisClient:
         except Exception as e:
             logger.error(f"Redis expire error: {e}")
             return False
+
 
 # Create global Redis client instance
 redis_client = RedisClient()

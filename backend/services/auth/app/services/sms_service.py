@@ -9,6 +9,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+
 class SMSService:
     """SMS service for sending OTP and notifications"""
 
@@ -17,8 +18,7 @@ class SMSService:
         if settings.AFRICAS_TALKING_USERNAME and settings.AFRICAS_TALKING_API_KEY:
             try:
                 africastalking.initialize(
-                    settings.AFRICAS_TALKING_USERNAME,
-                    settings.AFRICAS_TALKING_API_KEY
+                    settings.AFRICAS_TALKING_USERNAME, settings.AFRICAS_TALKING_API_KEY
                 )
                 self.sms = africastalking.SMS
                 self.initialized = True
@@ -27,7 +27,9 @@ class SMSService:
                 logger.error(f"Failed to initialize Africa's Talking: {e}")
                 self.initialized = False
         else:
-            logger.warning("Africa's Talking credentials not configured - SMS will be mocked")
+            logger.warning(
+                "Africa's Talking credentials not configured - SMS will be mocked"
+            )
             self.initialized = False
 
     def send_sms(self, phone: str, message: str) -> Tuple[bool, Optional[str]]:
@@ -53,15 +55,13 @@ class SMSService:
         try:
             # Send SMS using Africa's Talking
             response = self.sms.send(
-                message,
-                [phone],
-                sender_id=settings.AFRICAS_TALKING_SENDER_ID
+                message, [phone], sender_id=settings.AFRICAS_TALKING_SENDER_ID
             )
 
             # Check response
-            if response['SMSMessageData']['Recipients']:
-                recipient = response['SMSMessageData']['Recipients'][0]
-                if recipient['status'] == 'Success':
+            if response["SMSMessageData"]["Recipients"]:
+                recipient = response["SMSMessageData"]["Recipients"][0]
+                if recipient["status"] == "Success":
                     logger.info(f"SMS sent successfully to {phone}")
                     return True, None
                 else:
@@ -93,7 +93,9 @@ class SMSService:
         message = OTPGenerator.format_otp_message(otp)
         return self.send_sms(phone, message)
 
-    def send_welcome_message(self, phone: str, first_name: Optional[str] = None) -> Tuple[bool, Optional[str]]:
+    def send_welcome_message(
+        self, phone: str, first_name: Optional[str] = None
+    ) -> Tuple[bool, Optional[str]]:
         """
         Send welcome message to new user
 
@@ -108,6 +110,7 @@ class SMSService:
         message = f"Welcome to Matatu Fleet, {name}! Your account has been created successfully. You can now book trips and track your rides."
 
         return self.send_sms(phone, message)
+
 
 # Create global SMS service instance
 sms_service = SMSService()

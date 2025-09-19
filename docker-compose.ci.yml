@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: matatu-postgres-ci
+    environment:
+      POSTGRES_DB: matatu_fleet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - matatu-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d matatu_fleet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and task queue
+  redis:
+    image: redis:7-alpine
+    container_name: matatu-redis-ci
+    ports:
+      - "6379:6379"
+    networks:
+      - matatu-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./backend/services/auth
+      dockerfile: Dockerfile
+    container_name: matatu-auth-ci
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/matatu_fleet
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET_KEY=test-secret-key-for-ci
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - matatu-network
+
+networks:
+  matatu-network:
+    driver: bridge
