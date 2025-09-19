@@ -136,6 +136,7 @@
 
 **Merged**: PR #2 - 2025-09-19
 **Ready for**: Story 1.3 - Admin Account Management
+
 ## Risks & Mitigation
 - **Risk**: JWT token security vulnerabilities
   - **Mitigation**: Use industry best practices, short expiration times
