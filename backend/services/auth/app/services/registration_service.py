@@ -7,10 +7,10 @@ from datetime import datetime, timedelta
 from typing import Tuple, Optional, Dict, Any
 import uuid
 from sqlalchemy.orm import Session
-from supabase import create_client, Client
 
 from app.core.config import settings
 from app.core.redis_client import redis_client
+from app.core.supabase_client import supabase_client
 from app.models.user_profile import UserProfile, UserRole
 from app.utils.otp_generator import OTPGenerator
 from app.utils.phone_validator import PhoneValidator
@@ -24,15 +24,9 @@ class RegistrationService:
 
     def __init__(self):
         """Initialize registration service"""
-        self.supabase: Optional[Client] = None
-        if settings.SUPABASE_URL and settings.SUPABASE_SERVICE_KEY:
-            try:
-                self.supabase = create_client(
-                    settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY
-                )
-                logger.info("Supabase client initialized")
-            except Exception as e:
-                logger.error(f"Failed to initialize Supabase: {e}")
+        # Use the global Supabase client
+        self.supabase_client = supabase_client
+        logger.info("Registration service initialized with Supabase client")
 
     def initiate_registration(
         self, phone: str, db: Session
@@ -181,22 +175,43 @@ class RegistrationService:
 
             # Create user in Supabase Auth
             supabase_user = None
-            if self.supabase:
+            if self.supabase_client.service_client:
                 try:
-                    auth_response = self.supabase.auth.admin.create_user(
-                        {
-                            "phone": phone,
-                            "email": (
-                                email
-                                if email
-                                else f"{phone.replace('+', '')}@temp.matatu.app"
-                            ),
-                            "phone_confirmed": True,
-                            "email_confirmed": bool(email),
-                        }
+                    auth_response = (
+                        self.supabase_client.service_client.auth.admin.create_user(
+                            {
+                                "phone": phone,
+                                "email": (
+                                    email
+                                    if email
+                                    else f"{phone.replace('+', '')}@temp.matatu.app"
+                                ),
+                                "phone_confirmed": True,
+                                "email_confirmed": bool(email),
+                            }
+                        )
                     )
                     supabase_user = auth_response.user
                     logger.info(f"Created Supabase user: {supabase_user.id}")
+
+                    # Also create user profile in Supabase profiles table
+                    profile_data = {
+                        "user_id": supabase_user.id,  # This should be user_id, not id
+                        "phone": phone,
+                        "first_name": first_name,
+                        "last_name": last_name,
+                        "email": email,
+                        "role": UserRole.PASSENGER.value,
+                        "is_active": True,
+                        "created_at": datetime.utcnow().isoformat(),
+                        "updated_at": datetime.utcnow().isoformat(),
+                    }
+
+                    self.supabase_client.create_user_profile(profile_data)
+                    logger.info(
+                        f"Created Supabase profile for user: {supabase_user.id}"
+                    )
+
                 except Exception as e:
                     logger.error(f"Supabase user creation failed: {e}")
                     return False, {
