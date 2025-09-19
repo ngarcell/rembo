@@ -10,19 +10,24 @@ import enum
 
 from app.core.database import Base
 
+
 class UserRole(str, enum.Enum):
     """User role enumeration"""
+
     ADMIN = "admin"
     MANAGER = "manager"
     PASSENGER = "passenger"
 
+
 class UserProfile(Base):
     """User profile model"""
-    
+
     __tablename__ = "user_profiles"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), unique=True, nullable=False)  # Supabase auth user ID
+    user_id = Column(
+        UUID(as_uuid=True), unique=True, nullable=False
+    )  # Supabase auth user ID
     phone = Column(String(15), unique=True, nullable=False, index=True)
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
@@ -31,18 +36,20 @@ class UserProfile(Base):
         Enum(
             UserRole,
             name="user_role",
-            values_callable=lambda enum_cls: [e.value for e in enum_cls]
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
         ),
         nullable=False,
-        default=UserRole.PASSENGER.value
+        default=UserRole.PASSENGER.value,
     )
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
     def __repr__(self):
         return f"<UserProfile(id={self.id}, phone={self.phone}, role={self.role})>"
-    
+
     def to_dict(self):
         """Convert model to dictionary"""
         return {

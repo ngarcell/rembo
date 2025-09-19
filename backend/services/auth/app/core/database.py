@@ -32,6 +32,7 @@ SessionLocal = sessionmaker(
 # Create declarative base
 Base = declarative_base()
 
+
 def get_db() -> Session:
     """
     Dependency to get database session
@@ -45,6 +46,7 @@ def get_db() -> Session:
         raise
     finally:
         db.close()
+
 
 def init_db():
     """
