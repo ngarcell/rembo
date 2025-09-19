@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.core.database import engine, Base, init_db
 from app.api.v1.api import api_router
 from app.core.redis_client import redis_client
+from app.core.supabase_client import supabase_client
 
 # Security scheme
 security = HTTPBearer()
@@ -34,7 +35,16 @@ async def lifespan(app: FastAPI):
         print("✅ Redis connection established")
     except Exception as e:
         print(f"❌ Redis connection failed: {e}")
-    
+
+    # Test Supabase connection
+    try:
+        if supabase_client.test_connection():
+            print("✅ Supabase connection established")
+        else:
+            print("⚠️ Supabase connection not configured or failed")
+    except Exception as e:
+        print(f"❌ Supabase connection failed: {e}")
+
     print("✅ Auth Service startup complete")
     
     yield
@@ -79,24 +89,46 @@ async def root():
 @app.get("/health")
 def health_check():
     """Health check endpoint"""
+    health_status = {
+        "status": "healthy",
+        "database": "unknown",
+        "redis": "unknown",
+        "supabase": "unknown"
+    }
+
     try:
         # Test database connection
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
+        health_status["database"] = "connected"
+    except Exception as e:
+        health_status["database"] = f"error: {str(e)}"
+        health_status["status"] = "unhealthy"
 
+    try:
         # Test Redis connection
         redis_client.ping()
-
-        return {
-            "status": "healthy",
-            "database": "connected",
-            "redis": "connected"
-        }
+        health_status["redis"] = "connected"
     except Exception as e:
+        health_status["redis"] = f"error: {str(e)}"
+        health_status["status"] = "unhealthy"
+
+    try:
+        # Test Supabase connection
+        if supabase_client.test_connection():
+            health_status["supabase"] = "connected"
+        else:
+            health_status["supabase"] = "not configured"
+    except Exception as e:
+        health_status["supabase"] = f"error: {str(e)}"
+
+    if health_status["status"] == "unhealthy":
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Service unhealthy: {str(e)}"
+            detail=health_status
         )
+
+    return health_status
 
 if __name__ == "__main__":
     uvicorn.run(

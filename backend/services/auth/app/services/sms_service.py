@@ -93,6 +93,24 @@ class SMSService:
         message = OTPGenerator.format_otp_message(otp)
         return self.send_sms(phone, message)
 
+    def send_login_otp(self, phone: str, otp: str, first_name: Optional[str] = None) -> Tuple[bool, Optional[str]]:
+        """
+        Send login OTP via SMS
+
+        Args:
+            phone: Phone number in international format
+            otp: OTP code to send
+            first_name: User's first name for personalization
+
+        Returns:
+            Tuple of (success, error_message)
+        """
+        name = first_name if first_name else ""
+        greeting = f"Hi {name}, " if name else ""
+        message = f"{greeting}Your Matatu Fleet login code is: {otp}. Valid for 5 minutes. Do not share this code."
+
+        return self.send_sms(phone, message)
+
     def send_welcome_message(
         self, phone: str, first_name: Optional[str] = None
     ) -> Tuple[bool, Optional[str]]:
