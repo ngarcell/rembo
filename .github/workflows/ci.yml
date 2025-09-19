@@ -166,8 +166,19 @@ jobs:
 
     - name: Run integration smoke tests
       run: |
-        # Health endpoint
-        curl -f http://localhost:8001/health
+        # Wait for health endpoint up to ~90s with logs
+        for i in {1..30}; do
+          if curl -fs http://localhost:8001/health > /dev/null; then
+            echo "Health check passed";
+            exit 0;
+          fi
+          echo "Waiting for service to become healthy ($i/30)...";
+          docker compose -f docker-compose.ci.yml logs --tail 50 auth-service || true
+          sleep 3;
+        done
+        echo "Service failed to become healthy in time";
+        docker compose -f docker-compose.ci.yml logs auth-service || true
+        exit 1
 
     - name: Cleanup
       if: always()
