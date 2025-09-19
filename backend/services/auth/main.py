@@ -12,10 +12,11 @@ from contextlib import asynccontextmanager
 from sqlalchemy import text
 
 from app.core.config import settings
-from app.core.database import engine, Base, init_db
+from app.core.database import engine, Base, init_db, get_db
 from app.api.v1.api import api_router
 from app.core.redis_client import redis_client
 from app.core.supabase_client import supabase_client
+from app.services.admin_service import AdminService
 
 # Security scheme
 security = HTTPBearer()
@@ -28,7 +29,15 @@ async def lifespan(app: FastAPI):
     
     # Create database tables
     init_db()
-    
+
+    # Create default fleets
+    try:
+        db = next(get_db())
+        AdminService.create_default_fleets(db)
+        db.close()
+    except Exception as e:
+        print(f"⚠️ Failed to create default fleets: {e}")
+
     # Test Redis connection
     try:
         redis_client.ping()
@@ -85,6 +94,10 @@ async def root():
         "status": "healthy",
         "docs": "/docs"
     }
+
+
+
+
 
 @app.get("/health")
 def health_check():
