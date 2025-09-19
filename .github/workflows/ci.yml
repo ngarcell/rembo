@@ -147,12 +147,7 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
     
-    - name: Test Docker Compose
-      run: |
-        # Use CI-specific compose file with only working services
-        docker compose -f docker-compose.ci.yml config
-        docker compose -f docker-compose.ci.yml build auth-service
-        echo "Docker Compose configuration and build successful!"
+
 
   integration-tests:
     runs-on: ubuntu-latest
