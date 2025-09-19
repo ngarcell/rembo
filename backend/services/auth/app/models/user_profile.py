@@ -43,7 +43,9 @@ class UserProfile(Base):
         default=UserRole.PASSENGER.value,
     )
     is_active = Column(Boolean, default=True, nullable=False)
-    fleet_id = Column(UUID(as_uuid=True), nullable=True)  # Temporarily removed FK constraint
+    fleet_id = Column(
+        UUID(as_uuid=True), nullable=True
+    )  # Temporarily removed FK constraint
     temporary_access_code = Column(String(20), nullable=True)
     created_by_admin_id = Column(String(36), nullable=True)
     last_login = Column(DateTime(timezone=True), nullable=True)
