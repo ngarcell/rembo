@@ -93,7 +93,9 @@ class SMSService:
         message = OTPGenerator.format_otp_message(otp)
         return self.send_sms(phone, message)
 
-    def send_login_otp(self, phone: str, otp: str, first_name: Optional[str] = None) -> Tuple[bool, Optional[str]]:
+    def send_login_otp(
+        self, phone: str, otp: str, first_name: Optional[str] = None
+    ) -> Tuple[bool, Optional[str]]:
         """
         Send login OTP via SMS
 

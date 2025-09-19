@@ -177,17 +177,19 @@ class RegistrationService:
             supabase_user = None
             if self.supabase_client.service_client:
                 try:
-                    auth_response = self.supabase_client.service_client.auth.admin.create_user(
-                        {
-                            "phone": phone,
-                            "email": (
-                                email
-                                if email
-                                else f"{phone.replace('+', '')}@temp.matatu.app"
-                            ),
-                            "phone_confirmed": True,
-                            "email_confirmed": bool(email),
-                        }
+                    auth_response = (
+                        self.supabase_client.service_client.auth.admin.create_user(
+                            {
+                                "phone": phone,
+                                "email": (
+                                    email
+                                    if email
+                                    else f"{phone.replace('+', '')}@temp.matatu.app"
+                                ),
+                                "phone_confirmed": True,
+                                "email_confirmed": bool(email),
+                            }
+                        )
                     )
                     supabase_user = auth_response.user
                     logger.info(f"Created Supabase user: {supabase_user.id}")
@@ -206,7 +208,9 @@ class RegistrationService:
                     }
 
                     self.supabase_client.create_user_profile(profile_data)
-                    logger.info(f"Created Supabase profile for user: {supabase_user.id}")
+                    logger.info(
+                        f"Created Supabase profile for user: {supabase_user.id}"
+                    )
 
                 except Exception as e:
                     logger.error(f"Supabase user creation failed: {e}")
