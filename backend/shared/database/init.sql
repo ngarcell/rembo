@@ -305,3 +305,165 @@ CREATE TRIGGER update_routes_updated_at BEFORE UPDATE ON routes FOR EACH ROW EXE
 CREATE TRIGGER update_trips_updated_at BEFORE UPDATE ON trips FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON bookings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON payments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Performance metrics table
+CREATE TABLE performance_metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE, -- NULL for fleet-wide metrics
+    fleet_id UUID NOT NULL REFERENCES fleets(id) ON DELETE CASCADE,
+    metric_type VARCHAR(50) NOT NULL, -- fuel_efficiency, revenue, passenger_count, etc.
+    metric_value DECIMAL(15,2) NOT NULL,
+    metric_unit VARCHAR(20), -- km, liters, KES, hours, etc.
+
+    -- Time period
+    date_recorded DATE NOT NULL,
+    period_start TIMESTAMP,
+    period_end TIMESTAMP,
+
+    -- Context
+    route_id VARCHAR(100),
+    driver_id UUID REFERENCES drivers(id) ON DELETE SET NULL,
+
+    -- Additional data
+    notes TEXT,
+    recorded_by UUID NOT NULL REFERENCES user_profiles(id),
+
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Route performance table
+CREATE TABLE route_performance (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    fleet_id UUID NOT NULL REFERENCES fleets(id) ON DELETE CASCADE,
+    route_name VARCHAR(200) NOT NULL,
+    route_code VARCHAR(50),
+
+    -- Performance metrics
+    total_trips INTEGER DEFAULT 0 NOT NULL,
+    total_distance_km DECIMAL(10,2) DEFAULT 0.0 NOT NULL,
+    total_revenue INTEGER DEFAULT 0 NOT NULL, -- In cents
+    total_passengers INTEGER DEFAULT 0 NOT NULL,
+    average_trip_time_minutes DECIMAL(8,2),
+    on_time_percentage DECIMAL(5,2),
+
+    -- Efficiency metrics
+    fuel_consumption_liters DECIMAL(10,2),
+    fuel_efficiency_km_per_liter DECIMAL(8,2),
+    maintenance_cost INTEGER DEFAULT 0 NOT NULL, -- In cents
+
+    -- Time period
+    date_recorded DATE NOT NULL,
+    period_start TIMESTAMP NOT NULL,
+    period_end TIMESTAMP NOT NULL,
+
+    -- Metadata
+    recorded_by UUID NOT NULL REFERENCES user_profiles(id),
+    notes TEXT,
+
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Vehicle performance summary table
+CREATE TABLE vehicle_performance_summary (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    fleet_id UUID NOT NULL REFERENCES fleets(id) ON DELETE CASCADE,
+
+    -- Summary period
+    summary_date DATE NOT NULL,
+    period_type VARCHAR(20) NOT NULL, -- daily, weekly, monthly
+
+    -- Operational metrics
+    trips_completed INTEGER DEFAULT 0 NOT NULL,
+    total_distance_km DECIMAL(10,2) DEFAULT 0.0 NOT NULL,
+    total_revenue INTEGER DEFAULT 0 NOT NULL, -- In cents
+    total_passengers INTEGER DEFAULT 0 NOT NULL,
+    active_hours DECIMAL(8,2) DEFAULT 0.0 NOT NULL,
+
+    -- Efficiency metrics
+    fuel_consumed_liters DECIMAL(10,2),
+    fuel_cost INTEGER, -- In cents
+    maintenance_cost INTEGER DEFAULT 0 NOT NULL, -- In cents
+    utilization_rate DECIMAL(5,2), -- Percentage
+
+    -- Performance indicators
+    average_speed_kmh DECIMAL(8,2),
+    on_time_trips INTEGER DEFAULT 0 NOT NULL,
+    delayed_trips INTEGER DEFAULT 0 NOT NULL,
+    cancelled_trips INTEGER DEFAULT 0 NOT NULL,
+
+    -- Financial metrics
+    gross_revenue INTEGER DEFAULT 0 NOT NULL, -- In cents
+    operating_cost INTEGER DEFAULT 0 NOT NULL, -- In cents
+    net_profit INTEGER DEFAULT 0 NOT NULL, -- In cents
+    profit_margin DECIMAL(5,2), -- Percentage
+
+    -- Driver assignment
+    primary_driver_id UUID REFERENCES drivers(id) ON DELETE SET NULL,
+
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Fleet KPIs table
+CREATE TABLE fleet_kpis (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    fleet_id UUID NOT NULL REFERENCES fleets(id) ON DELETE CASCADE,
+
+    -- KPI identification
+    kpi_name VARCHAR(100) NOT NULL,
+    kpi_category VARCHAR(50) NOT NULL, -- operational, financial, safety, etc.
+
+    -- Values
+    current_value DECIMAL(15,2) NOT NULL,
+    target_value DECIMAL(15,2),
+    previous_value DECIMAL(15,2),
+
+    -- Performance
+    achievement_percentage DECIMAL(5,2),
+    trend VARCHAR(20), -- improving, declining, stable
+
+    -- Time period
+    measurement_date DATE NOT NULL,
+    period_type VARCHAR(20) NOT NULL, -- daily, weekly, monthly, quarterly
+
+    -- Metadata
+    unit VARCHAR(20),
+    description TEXT,
+    calculation_method TEXT,
+
+    recorded_by UUID NOT NULL REFERENCES user_profiles(id),
+
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes for analytics tables
+CREATE INDEX idx_performance_metrics_vehicle_id ON performance_metrics(vehicle_id);
+CREATE INDEX idx_performance_metrics_fleet_id ON performance_metrics(fleet_id);
+CREATE INDEX idx_performance_metrics_type ON performance_metrics(metric_type);
+CREATE INDEX idx_performance_metrics_date ON performance_metrics(date_recorded);
+CREATE INDEX idx_performance_metrics_route ON performance_metrics(route_id);
+
+CREATE INDEX idx_route_performance_fleet_id ON route_performance(fleet_id);
+CREATE INDEX idx_route_performance_route_name ON route_performance(route_name);
+CREATE INDEX idx_route_performance_route_code ON route_performance(route_code);
+CREATE INDEX idx_route_performance_date ON route_performance(date_recorded);
+
+CREATE INDEX idx_vehicle_performance_summary_vehicle_id ON vehicle_performance_summary(vehicle_id);
+CREATE INDEX idx_vehicle_performance_summary_fleet_id ON vehicle_performance_summary(fleet_id);
+CREATE INDEX idx_vehicle_performance_summary_date ON vehicle_performance_summary(summary_date);
+CREATE INDEX idx_vehicle_performance_summary_period ON vehicle_performance_summary(period_type);
+
+CREATE INDEX idx_fleet_kpis_fleet_id ON fleet_kpis(fleet_id);
+CREATE INDEX idx_fleet_kpis_name ON fleet_kpis(kpi_name);
+CREATE INDEX idx_fleet_kpis_category ON fleet_kpis(kpi_category);
+CREATE INDEX idx_fleet_kpis_date ON fleet_kpis(measurement_date);
+
+-- Add updated_at triggers for analytics tables
+CREATE TRIGGER update_performance_metrics_updated_at BEFORE UPDATE ON performance_metrics FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_route_performance_updated_at BEFORE UPDATE ON route_performance FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_vehicle_performance_summary_updated_at BEFORE UPDATE ON vehicle_performance_summary FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_fleet_kpis_updated_at BEFORE UPDATE ON fleet_kpis FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

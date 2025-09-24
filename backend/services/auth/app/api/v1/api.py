@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     manager,
     vehicle,
     vehicle_status,
+    fleet_analytics,
 )
 
 api_router = APIRouter()
@@ -26,4 +27,7 @@ api_router.include_router(manager.router, prefix="/manager", tags=["manager"])
 api_router.include_router(vehicle.router, prefix="/manager", tags=["manager"])
 api_router.include_router(
     vehicle_status.router, prefix="/manager", tags=["vehicle-status"]
+)
+api_router.include_router(
+    fleet_analytics.router, prefix="/manager/analytics", tags=["fleet-analytics"]
 )

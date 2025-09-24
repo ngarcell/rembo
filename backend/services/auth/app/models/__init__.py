@@ -6,3 +6,9 @@ from .vehicle_status import (
     VehicleDocument,
     VehicleInspection,
 )
+from .fleet_analytics import (
+    PerformanceMetric,
+    RoutePerformance,
+    VehiclePerformanceSummary,
+    FleetKPI,
+)

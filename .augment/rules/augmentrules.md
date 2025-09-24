@@ -3,7 +3,7 @@ type: "always_apply"
 ---
 
 Follow the BMAD-METHOD always.
-Only commit and push changes after a successfull run with our real database and black code formatting isseus are sorted.
+Only commit and create PR'S and push changes after a successfull run with our real database and black code formatting isseus are sorted.
 Always wait and monitor the Github PR to make sure it passes checks, if not fix errors and make sure of no merging issues.
 ### 🧠 AI Behavior Rules
 - **Never assume missing context. Ask questions if uncertain.**
