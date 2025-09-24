@@ -21,19 +21,6 @@
 - [x] Create session management middleware
 - [x] Handle token refresh automatically
 - [x] Implement secure logout functionality
-=======
-- [ ] User can login with phone number and OTP
-- [ ] System maintains secure session with JWT tokens
-- [ ] User can access personalized dashboard after login
-- [ ] System handles session expiry gracefully
-- [ ] User can logout securely
-
-## Technical Requirements
-- [ ] Implement secure JWT token management
-- [ ] Create session management middleware
-- [ ] Handle token refresh automatically
-- [ ] Implement secure logout functionality
->>>>>>> origin/main
 
 ## Implementation Plan
 
@@ -106,8 +93,8 @@
 - ✅ Story 1.1 (Passenger Registration) completed
 - ✅ JWT service implementation
 - ✅ Authentication middleware
-- [ ] Frontend login components
-- [ ] Session management on client side
+- 🔄 Frontend login components (Future Epic - UI/UX Implementation)
+- 🔄 Session management on client side (Future Epic - UI/UX Implementation)
 
 ## Implementation Results ✅
 

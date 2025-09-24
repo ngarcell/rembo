@@ -17,6 +17,7 @@ from app.api.v1.api import api_router
 from app.core.redis_client import redis_client
 from app.core.supabase_client import supabase_client
 from app.services.admin_service import AdminService
+from app.services.jwt_service import jwt_service
 
 # Security scheme
 security = HTTPBearer()
@@ -142,6 +143,30 @@ def health_check():
         )
 
     return health_status
+
+
+@app.post("/debug/create-manager-token")
+def create_manager_token():
+    """Create a JWT token for testing manager functionality"""
+    # Use the Samuel Rembo Manager for testing
+    user_id = "b31f64ae-f16b-45ad-882a-446611533916"
+    phone = "+254700777666"
+    role = "manager"
+
+    access_token = jwt_service.create_access_token(
+        user_id=user_id,
+        phone=phone,
+        role=role
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user_id,
+        "phone": phone,
+        "role": role
+    }
+
 
 if __name__ == "__main__":
     uvicorn.run(

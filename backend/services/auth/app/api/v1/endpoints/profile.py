@@ -124,22 +124,6 @@ def update_user_profile(
             updated = True
 
         if request.email is not None:
-            # Check if email is already in use by another user
-            existing_user = (
-                db.query(UserProfile)
-                .filter(
-                    UserProfile.email == request.email,
-                    UserProfile.id != current_user.id,
-                )
-                .first()
-            )
-
-            if existing_user:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Email address is already in use",
-                )
-
             current_user.email = request.email
             updated = True
 
