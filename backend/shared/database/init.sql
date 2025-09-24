@@ -71,17 +71,31 @@ CREATE TABLE drivers (
 -- Vehicle assignments
 CREATE TABLE vehicle_assignments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id),
-    driver_id UUID REFERENCES drivers(id),
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    driver_id UUID NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+    manager_id UUID NOT NULL REFERENCES user_profiles(id),
+    fleet_id UUID NOT NULL REFERENCES fleets(id),
     assigned_at TIMESTAMP DEFAULT NOW(),
     unassigned_at TIMESTAMP,
     is_active BOOLEAN DEFAULT true,
-    notes TEXT
+    assignment_notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Add partial unique constraint for active assignments
-CREATE UNIQUE INDEX idx_vehicle_assignments_active_unique
+-- Add partial unique constraints for active assignments
+CREATE UNIQUE INDEX idx_vehicle_assignments_active_vehicle_unique
 ON vehicle_assignments(vehicle_id) WHERE is_active = true;
+
+CREATE UNIQUE INDEX idx_vehicle_assignments_active_driver_unique
+ON vehicle_assignments(driver_id) WHERE is_active = true;
+
+-- Add indexes for performance
+CREATE INDEX idx_vehicle_assignments_vehicle_id ON vehicle_assignments(vehicle_id);
+CREATE INDEX idx_vehicle_assignments_driver_id ON vehicle_assignments(driver_id);
+CREATE INDEX idx_vehicle_assignments_fleet_id ON vehicle_assignments(fleet_id);
+CREATE INDEX idx_vehicle_assignments_manager_id ON vehicle_assignments(manager_id);
+CREATE INDEX idx_vehicle_assignments_active ON vehicle_assignments(is_active) WHERE is_active = true;
 
 -- Routes
 CREATE TABLE routes (
