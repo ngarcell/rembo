@@ -11,7 +11,7 @@ from typing import Tuple, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
 
-from app.models.driver_profile import DriverProfile
+from app.models.simple_driver import SimpleDriver
 from app.models.fleet import Fleet
 
 logger = logging.getLogger(__name__)
@@ -67,8 +67,8 @@ class DriverIDService:
 
             # Verify uniqueness (should be unique by design, but double-check)
             existing = (
-                db.query(DriverProfile)
-                .filter(DriverProfile.driver_id == driver_id)
+                db.query(SimpleDriver)
+                .filter(SimpleDriver.driver_code == driver_id)
                 .first()
             )
             if existing:
@@ -147,12 +147,12 @@ class DriverIDService:
                     """
                     SELECT COALESCE(MAX(
                         CAST(
-                            SUBSTRING(driver_id FROM 5 FOR 3) AS INTEGER
+                            SUBSTRING(driver_code FROM 5 FOR 3) AS INTEGER
                         )
                     ), 0) + 1 as next_number
                     FROM drivers
                     WHERE fleet_id = :fleet_id
-                    AND driver_id ~ '^DRV-[0-9]{3}.*$'
+                    AND driver_code ~ '^DRV-[0-9]{3}.*$'
                 """
                 ),
                 {"fleet_id": fleet_id},

@@ -15,8 +15,8 @@ from app.models.fleet_analytics import (
     VehiclePerformanceSummary,
     FleetKPI,
 )
-from app.models.vehicle import Vehicle
-from app.models.driver_profile import DriverProfile
+from app.models.simple_vehicle import SimpleVehicle
+from app.models.simple_driver import SimpleDriver
 from app.models.user_profile import UserProfile
 from app.models.fleet import Fleet
 from app.schemas.fleet_analytics import (
@@ -44,11 +44,11 @@ class FleetAnalyticsService:
             # Validate vehicle if provided
             if request.vehicle_id:
                 vehicle = (
-                    db.query(Vehicle)
+                    db.query(SimpleVehicle)
                     .filter(
                         and_(
-                            Vehicle.id == request.vehicle_id,
-                            Vehicle.fleet_id == fleet_id,
+                            SimpleVehicle.id == request.vehicle_id,
+                            SimpleVehicle.fleet_id == fleet_id,
                         )
                     )
                     .first()
@@ -59,11 +59,11 @@ class FleetAnalyticsService:
             # Validate driver if provided
             if request.driver_id:
                 driver = (
-                    db.query(DriverProfile)
+                    db.query(SimpleDriver)
                     .filter(
                         and_(
-                            DriverProfile.id == request.driver_id,
-                            DriverProfile.fleet_id == fleet_id,
+                            SimpleDriver.id == request.driver_id,
+                            SimpleDriver.fleet_id == fleet_id,
                         )
                     )
                     .first()
@@ -517,25 +517,30 @@ class FleetAnalyticsService:
 
             # Fleet overview
             total_vehicles = (
-                db.query(Vehicle).filter(Vehicle.fleet_id == fleet_id).count()
+                db.query(SimpleVehicle)
+                .filter(SimpleVehicle.fleet_id == fleet_id)
+                .count()
             )
             active_vehicles = (
-                db.query(Vehicle)
-                .filter(and_(Vehicle.fleet_id == fleet_id, Vehicle.status == "active"))
+                db.query(SimpleVehicle)
+                .filter(
+                    and_(
+                        SimpleVehicle.fleet_id == fleet_id,
+                        SimpleVehicle.status == "active",
+                    )
+                )
                 .count()
             )
 
             total_drivers = (
-                db.query(DriverProfile)
-                .filter(DriverProfile.fleet_id == fleet_id)
-                .count()
+                db.query(SimpleDriver).filter(SimpleDriver.fleet_id == fleet_id).count()
             )
             active_drivers = (
-                db.query(DriverProfile)
+                db.query(SimpleDriver)
                 .filter(
                     and_(
-                        DriverProfile.fleet_id == fleet_id,
-                        DriverProfile.employment_status == "active",
+                        SimpleDriver.fleet_id == fleet_id,
+                        SimpleDriver.employment_status == "active",
                     )
                 )
                 .count()
@@ -644,9 +649,12 @@ class FleetAnalyticsService:
 
             # Maintenance alerts (simplified)
             vehicles_needing_maintenance = (
-                db.query(Vehicle)
+                db.query(SimpleVehicle)
                 .filter(
-                    and_(Vehicle.fleet_id == fleet_id, Vehicle.status == "maintenance")
+                    and_(
+                        SimpleVehicle.fleet_id == fleet_id,
+                        SimpleVehicle.status == "maintenance",
+                    )
                 )
                 .count()
             )

@@ -75,7 +75,7 @@ class VehicleStatusHistory(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
-    vehicle = relationship("Vehicle")
+    vehicle = relationship("SimpleVehicle")
     changed_by_user = relationship("UserProfile")
 
 
@@ -129,7 +129,7 @@ class MaintenanceRecord(Base):
     )
 
     # Relationships
-    vehicle = relationship("Vehicle")
+    vehicle = relationship("SimpleVehicle")
     creator = relationship("UserProfile")
 
 
@@ -175,7 +175,7 @@ class VehicleDocument(Base):
     )
 
     # Relationships
-    vehicle = relationship("Vehicle")
+    vehicle = relationship("SimpleVehicle")
     uploader = relationship("UserProfile")
 
 
@@ -222,5 +222,5 @@ class VehicleInspection(Base):
     )
 
     # Relationships
-    vehicle = relationship("Vehicle")
+    vehicle = relationship("SimpleVehicle")
     creator = relationship("UserProfile")

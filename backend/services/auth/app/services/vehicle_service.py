@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func
 from datetime import datetime
 
-from app.models.vehicle import Vehicle, VehicleStatus
+from app.models.simple_vehicle import SimpleVehicle, VehicleStatus
 from app.models.fleet import Fleet
 from app.models.user_profile import UserProfile
 from app.schemas.vehicle import VehicleRegistrationRequest, VehicleUpdateRequest
@@ -26,7 +26,7 @@ class VehicleService:
         manager_id: str,
         fleet_id: str,
         db: Session,
-    ) -> Tuple[bool, Optional[Vehicle], Optional[str]]:
+    ) -> Tuple[bool, Optional[SimpleVehicle], Optional[str]]:
         """
         Register a new vehicle
 
@@ -58,8 +58,8 @@ class VehicleService:
 
             # Check license plate uniqueness
             existing_vehicle = (
-                db.query(Vehicle)
-                .filter(Vehicle.license_plate == vehicle_data.license_plate)
+                db.query(SimpleVehicle)
+                .filter(SimpleVehicle.license_plate == vehicle_data.license_plate)
                 .first()
             )
 
@@ -72,11 +72,11 @@ class VehicleService:
 
             # Check fleet number uniqueness within fleet
             existing_fleet_number = (
-                db.query(Vehicle)
+                db.query(SimpleVehicle)
                 .filter(
                     and_(
-                        Vehicle.fleet_id == fleet_id,
-                        Vehicle.fleet_number == vehicle_data.fleet_number,
+                        SimpleVehicle.fleet_id == fleet_id,
+                        SimpleVehicle.fleet_number == vehicle_data.fleet_number,
                     )
                 )
                 .first()
@@ -95,7 +95,7 @@ class VehicleService:
                 encrypted_api_key = encrypt_sensitive_data(vehicle_data.gps_api_key)
 
             # Create vehicle with simplified fields
-            vehicle = Vehicle(
+            vehicle = SimpleVehicle(
                 fleet_id=fleet_id,
                 manager_id=manager_id,
                 fleet_number=vehicle_data.fleet_number,
@@ -133,7 +133,7 @@ class VehicleService:
         search: Optional[str] = None,
         status: Optional[str] = None,
         vehicle_type: Optional[str] = None,
-    ) -> Tuple[List[Vehicle], int]:
+    ) -> Tuple[List[SimpleVehicle], int]:
         """
         Get vehicles for a fleet with filtering and pagination
 
@@ -168,26 +168,26 @@ class VehicleService:
                 return [], 0
 
             # Build query
-            query = db.query(Vehicle).filter(Vehicle.fleet_id == fleet_id)
+            query = db.query(SimpleVehicle).filter(SimpleVehicle.fleet_id == fleet_id)
 
             # Apply filters
             if search:
                 search_term = f"%{search}%"
                 query = query.filter(
                     or_(
-                        Vehicle.license_plate.ilike(search_term),
-                        Vehicle.fleet_number.ilike(search_term),
-                        Vehicle.make.ilike(search_term),
-                        Vehicle.model.ilike(search_term),
-                        Vehicle.route.ilike(search_term),
+                        SimpleVehicle.license_plate.ilike(search_term),
+                        SimpleVehicle.fleet_number.ilike(search_term),
+                        SimpleVehicle.make.ilike(search_term),
+                        SimpleVehicle.model.ilike(search_term),
+                        SimpleVehicle.route.ilike(search_term),
                     )
                 )
 
             if status:
-                query = query.filter(Vehicle.status == status)
+                query = query.filter(SimpleVehicle.status == status)
 
             if vehicle_type:
-                query = query.filter(Vehicle.vehicle_type == vehicle_type)
+                query = query.filter(SimpleVehicle.vehicle_type == vehicle_type)
 
             # Get total count
             total_count = query.count()
@@ -195,7 +195,7 @@ class VehicleService:
             # Apply pagination
             offset = (page - 1) * limit
             vehicles = (
-                query.order_by(Vehicle.created_at.desc())
+                query.order_by(SimpleVehicle.created_at.desc())
                 .offset(offset)
                 .limit(limit)
                 .all()
@@ -210,7 +210,7 @@ class VehicleService:
     @staticmethod
     def get_vehicle_by_id(
         vehicle_id: str, manager_id: str, db: Session
-    ) -> Optional[Vehicle]:
+    ) -> Optional[SimpleVehicle]:
         """
         Get vehicle by ID with access control
 
@@ -225,11 +225,11 @@ class VehicleService:
         try:
             # Get vehicle with fleet access check
             vehicle = (
-                db.query(Vehicle)
-                .join(UserProfile, Vehicle.fleet_id == UserProfile.fleet_id)
+                db.query(SimpleVehicle)
+                .join(UserProfile, SimpleVehicle.fleet_id == UserProfile.fleet_id)
                 .filter(
                     and_(
-                        Vehicle.id == vehicle_id,
+                        SimpleVehicle.id == vehicle_id,
                         UserProfile.id == manager_id,
                         UserProfile.role == "manager",
                     )
@@ -249,7 +249,7 @@ class VehicleService:
         vehicle_data: VehicleUpdateRequest,
         manager_id: str,
         db: Session,
-    ) -> Tuple[bool, Optional[Vehicle], Optional[str]]:
+    ) -> Tuple[bool, Optional[SimpleVehicle], Optional[str]]:
         """
         Update vehicle information
 
@@ -274,11 +274,11 @@ class VehicleService:
                 and vehicle_data.license_plate != vehicle.license_plate
             ):
                 existing_vehicle = (
-                    db.query(Vehicle)
+                    db.query(SimpleVehicle)
                     .filter(
                         and_(
-                            Vehicle.license_plate == vehicle_data.license_plate,
-                            Vehicle.id != vehicle_id,
+                            SimpleVehicle.license_plate == vehicle_data.license_plate,
+                            SimpleVehicle.id != vehicle_id,
                         )
                     )
                     .first()
@@ -297,12 +297,12 @@ class VehicleService:
                 and vehicle_data.fleet_number != vehicle.fleet_number
             ):
                 existing_fleet_number = (
-                    db.query(Vehicle)
+                    db.query(SimpleVehicle)
                     .filter(
                         and_(
-                            Vehicle.fleet_id == vehicle.fleet_id,
-                            Vehicle.fleet_number == vehicle_data.fleet_number,
-                            Vehicle.id != vehicle_id,
+                            SimpleVehicle.fleet_id == vehicle.fleet_id,
+                            SimpleVehicle.fleet_number == vehicle_data.fleet_number,
+                            SimpleVehicle.id != vehicle_id,
                         )
                     )
                     .first()

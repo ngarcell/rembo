@@ -1,4 +1,6 @@
 # Models package
+from .simple_vehicle import SimpleVehicle
+from .simple_driver import SimpleDriver
 from .vehicle_assignment import VehicleAssignment
 from .vehicle_status import (
     VehicleStatusHistory,
@@ -11,4 +13,10 @@ from .fleet_analytics import (
     RoutePerformance,
     VehiclePerformanceSummary,
     FleetKPI,
+)
+from .trip import (
+    Route,
+    Trip,
+    TripTemplate,
+    TripStatus,
 )

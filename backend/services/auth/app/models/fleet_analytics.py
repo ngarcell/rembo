@@ -83,9 +83,9 @@ class PerformanceMetric(Base):
     )
 
     # Relationships
-    vehicle = relationship("Vehicle")
+    vehicle = relationship("SimpleVehicle")
     fleet = relationship("Fleet")
-    driver = relationship("DriverProfile")
+    driver = relationship("SimpleDriver")
     recorder = relationship("UserProfile")
 
 
@@ -197,9 +197,9 @@ class VehiclePerformanceSummary(Base):
     )
 
     # Relationships
-    vehicle = relationship("Vehicle")
+    vehicle = relationship("SimpleVehicle")
     fleet = relationship("Fleet")
-    primary_driver = relationship("DriverProfile")
+    primary_driver = relationship("SimpleDriver")
 
 
 class FleetKPI(Base):

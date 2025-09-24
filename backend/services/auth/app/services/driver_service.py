@@ -9,7 +9,7 @@ from typing import Dict, Any, Tuple, List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
-from app.models.driver_profile import DriverProfile, EmploymentStatus
+from app.models.simple_driver import SimpleDriver
 from app.models.user_profile import UserProfile, UserRole
 from app.models.fleet import Fleet
 from app.services.driver_id_service import DriverIDService
@@ -146,21 +146,11 @@ class DriverService:
                 }
 
             # Create driver profile
-            driver = DriverProfile(
-                driver_id=driver_id,
+            driver = SimpleDriver(
+                driver_code=driver_id,
                 fleet_id=fleet_id,
-                manager_id=manager.id,
-                first_name=first_name,
-                last_name=last_name,
-                phone=phone,
-                email=email,
-                date_of_birth=date_of_birth,
-                national_id=national_id,
                 license_number=license_number,
-                license_class=license_class,
                 license_expiry=license_expiry,
-                hire_date=hire_date or date.today(),
-                employment_status=EmploymentStatus.ACTIVE.value,
                 is_active=True,
             )
 

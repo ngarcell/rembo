@@ -467,3 +467,141 @@ CREATE TRIGGER update_performance_metrics_updated_at BEFORE UPDATE ON performanc
 CREATE TRIGGER update_route_performance_updated_at BEFORE UPDATE ON route_performance FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_vehicle_performance_summary_updated_at BEFORE UPDATE ON vehicle_performance_summary FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_fleet_kpis_updated_at BEFORE UPDATE ON fleet_kpis FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- ENHANCED TRIP MANAGEMENT SYSTEM (Story 3.1)
+-- =====================================================
+
+-- Drop existing basic tables to replace with enhanced versions
+DROP TABLE IF EXISTS trips CASCADE;
+DROP TABLE IF EXISTS routes CASCADE;
+
+-- Enhanced routes table for comprehensive trip planning
+CREATE TABLE routes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    fleet_id UUID NOT NULL REFERENCES fleets(id) ON DELETE CASCADE,
+
+    -- Route Information
+    route_code VARCHAR(20) NOT NULL,
+    route_name VARCHAR(255) NOT NULL,
+    origin_name VARCHAR(255) NOT NULL,
+    destination_name VARCHAR(255) NOT NULL,
+
+    -- Route Details
+    distance_km DECIMAL(8,2),
+    estimated_duration_minutes INTEGER,
+    base_fare DECIMAL(10,2) NOT NULL CHECK (base_fare >= 0),
+
+    -- Optional route data
+    waypoints TEXT, -- JSON string of waypoints
+    description TEXT,
+
+    -- Status
+    is_active BOOLEAN DEFAULT true NOT NULL,
+
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Constraints
+    UNIQUE(fleet_id, route_code)
+);
+
+-- Enhanced trips table for comprehensive trip management
+CREATE TABLE trips (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    -- Foreign Keys
+    route_id UUID NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    driver_id UUID NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+    assignment_id UUID REFERENCES vehicle_assignments(id) ON DELETE SET NULL,
+    fleet_id UUID NOT NULL REFERENCES fleets(id) ON DELETE CASCADE,
+    created_by UUID NOT NULL REFERENCES user_profiles(id),
+
+    -- Trip Code
+    trip_code VARCHAR(50) NOT NULL UNIQUE,
+
+    -- Schedule Information
+    scheduled_departure TIMESTAMP WITH TIME ZONE NOT NULL,
+    scheduled_arrival TIMESTAMP WITH TIME ZONE,
+    actual_departure TIMESTAMP WITH TIME ZONE,
+    actual_arrival TIMESTAMP WITH TIME ZONE,
+
+    -- Trip Details
+    fare DECIMAL(10,2) NOT NULL CHECK (fare >= 0),
+    total_seats INTEGER NOT NULL CHECK (total_seats > 0),
+    available_seats INTEGER NOT NULL CHECK (available_seats >= 0),
+    booked_seats INTEGER DEFAULT 0 NOT NULL CHECK (booked_seats >= 0),
+
+    -- Status and Notes
+    status trip_status DEFAULT 'scheduled' NOT NULL,
+    notes TEXT,
+    cancellation_reason TEXT,
+
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Constraints
+    CONSTRAINT valid_trip_times CHECK (
+        scheduled_arrival IS NULL OR scheduled_arrival > scheduled_departure
+    ),
+    CONSTRAINT valid_actual_times CHECK (
+        actual_arrival IS NULL OR actual_departure IS NULL OR actual_arrival >= actual_departure
+    ),
+    CONSTRAINT valid_seat_count CHECK (available_seats <= total_seats),
+    CONSTRAINT valid_booked_seats CHECK (booked_seats <= total_seats),
+    CONSTRAINT seat_count_consistency CHECK (available_seats + booked_seats = total_seats)
+);
+
+-- Trip templates for recurring trip scheduling
+CREATE TABLE trip_templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    -- Foreign Keys
+    route_id UUID NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+    fleet_id UUID NOT NULL REFERENCES fleets(id) ON DELETE CASCADE,
+    created_by UUID NOT NULL REFERENCES user_profiles(id),
+
+    -- Template Information
+    template_name VARCHAR(255) NOT NULL,
+    departure_time TIME NOT NULL,
+    fare DECIMAL(10,2) NOT NULL CHECK (fare >= 0),
+
+    -- Recurrence Pattern
+    days_of_week INTEGER[] NOT NULL, -- [1,2,3,4,5] for weekdays
+
+    -- Status
+    is_active BOOLEAN DEFAULT true NOT NULL,
+
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for enhanced routes
+CREATE INDEX idx_routes_fleet_id ON routes(fleet_id);
+CREATE INDEX idx_routes_route_code ON routes(route_code);
+CREATE INDEX idx_routes_is_active ON routes(is_active);
+CREATE INDEX idx_routes_origin_destination ON routes(origin_name, destination_name);
+
+-- Create indexes for enhanced trips
+CREATE INDEX idx_trips_route_date ON trips(route_id, scheduled_departure);
+CREATE INDEX idx_trips_vehicle_date ON trips(vehicle_id, scheduled_departure);
+CREATE INDEX idx_trips_driver_date ON trips(driver_id, scheduled_departure);
+CREATE INDEX idx_trips_status ON trips(status);
+CREATE INDEX idx_trips_fleet_date ON trips(fleet_id, scheduled_departure);
+CREATE INDEX idx_trips_trip_code ON trips(trip_code);
+CREATE INDEX idx_trips_departure_date ON trips(DATE(scheduled_departure));
+
+-- Create indexes for trip_templates
+CREATE INDEX idx_trip_templates_route_id ON trip_templates(route_id);
+CREATE INDEX idx_trip_templates_fleet_id ON trip_templates(fleet_id);
+CREATE INDEX idx_trip_templates_is_active ON trip_templates(is_active);
+CREATE INDEX idx_trip_templates_days_of_week ON trip_templates USING GIN(days_of_week);
+
+-- Add updated_at triggers for trip management tables
+CREATE TRIGGER update_routes_updated_at BEFORE UPDATE ON routes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_trips_updated_at BEFORE UPDATE ON trips FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_trip_templates_updated_at BEFORE UPDATE ON trip_templates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

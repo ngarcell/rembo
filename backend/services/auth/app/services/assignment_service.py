@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, func
 
 from app.models.vehicle_assignment import VehicleAssignment
-from app.models.vehicle import Vehicle
-from app.models.driver_profile import DriverProfile
+from app.models.simple_vehicle import SimpleVehicle
+from app.models.simple_driver import SimpleDriver
 from app.models.fleet import Fleet
 from app.models.user_profile import UserProfile
 
@@ -47,11 +47,11 @@ class AssignmentService:
         try:
             # Validate driver exists and is active
             driver = (
-                db.query(DriverProfile)
+                db.query(SimpleDriver)
                 .filter(
-                    DriverProfile.id == driver_id,
-                    DriverProfile.fleet_id == fleet_id,
-                    DriverProfile.is_active == True,
+                    SimpleDriver.id == driver_id,
+                    SimpleDriver.fleet_id == fleet_id,
+                    SimpleDriver.is_active == True,
                 )
                 .first()
             )
@@ -64,11 +64,10 @@ class AssignmentService:
 
             # Validate vehicle exists and is active
             vehicle = (
-                db.query(Vehicle)
+                db.query(SimpleVehicle)
                 .filter(
-                    Vehicle.id == vehicle_id,
-                    Vehicle.fleet_id == fleet_id,
-                    Vehicle.is_active == True,
+                    SimpleVehicle.id == vehicle_id,
+                    SimpleVehicle.fleet_id == fleet_id,
                 )
                 .first()
             )
@@ -197,8 +196,8 @@ class AssignmentService:
             for assignment in assignments:
                 # Get driver info
                 driver = (
-                    db.query(DriverProfile)
-                    .filter(DriverProfile.id == assignment.driver_id)
+                    db.query(SimpleDriver)
+                    .filter(SimpleDriver.id == assignment.driver_id)
                     .first()
                 )
                 driver_name = (
@@ -209,8 +208,8 @@ class AssignmentService:
 
                 # Get vehicle info
                 vehicle = (
-                    db.query(Vehicle)
-                    .filter(Vehicle.id == assignment.vehicle_id)
+                    db.query(SimpleVehicle)
+                    .filter(SimpleVehicle.id == assignment.vehicle_id)
                     .first()
                 )
                 vehicle_info = (
@@ -325,11 +324,11 @@ class AssignmentService:
 
             # Get available drivers
             available_drivers = (
-                db.query(DriverProfile)
+                db.query(SimpleDriver)
                 .filter(
-                    DriverProfile.fleet_id == fleet_id,
-                    DriverProfile.is_active == True,
-                    ~DriverProfile.id.in_(assigned_driver_ids),
+                    SimpleDriver.fleet_id == fleet_id,
+                    SimpleDriver.is_active == True,
+                    ~SimpleDriver.id.in_(assigned_driver_ids),
                 )
                 .all()
             )
@@ -382,11 +381,10 @@ class AssignmentService:
 
             # Get available vehicles
             available_vehicles = (
-                db.query(Vehicle)
+                db.query(SimpleVehicle)
                 .filter(
-                    Vehicle.fleet_id == fleet_id,
-                    Vehicle.is_active == True,
-                    ~Vehicle.id.in_(assigned_vehicle_ids),
+                    SimpleVehicle.fleet_id == fleet_id,
+                    ~SimpleVehicle.id.in_(assigned_vehicle_ids),
                 )
                 .all()
             )
