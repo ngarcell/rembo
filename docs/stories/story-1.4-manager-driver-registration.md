@@ -10,17 +10,17 @@
 **As a manager, I want to register drivers so that I can assign them to vehicles**
 
 ## Acceptance Criteria
-- [ ] Manager can create driver profiles with personal details
-- [ ] System auto-generates unique driver IDs
-- [ ] Manager can upload driver license and documents
-- [ ] Driver receives credentials to access system
-- [ ] Manager can view all drivers in their fleet
+- ✅ Manager can create driver profiles with personal details
+- ✅ System auto-generates unique driver IDs
+- 🔄 Manager can upload driver license and documents (Future Epic - UI/UX)
+- ✅ Driver receives credentials to access system
+- ✅ Manager can view all drivers in their fleet
 
 ## Technical Requirements
-- [ ] Implement driver registration API endpoints
-- [ ] Create unique driver ID generation algorithm
-- [ ] Add file upload capability for documents
-- [ ] Implement fleet-based access control
+- ✅ Implement driver registration API endpoints
+- ✅ Create unique driver ID generation algorithm
+- 🔄 Add file upload capability for documents (Future Epic - UI/UX)
+- ✅ Implement fleet-based access control
 
 ## Implementation Plan
 
@@ -154,8 +154,8 @@ CREATE TABLE driver_documents (
 - ✅ Story 1.2 (Passenger Login) completed
 - ✅ Story 1.3 (Admin Account Management) completed
 - ✅ Fleet management system
-- [ ] File upload service
-- [ ] Document storage solution
+- 🔄 File upload service (Future Epic - UI/UX)
+- 🔄 Document storage solution (Future Epic - UI/UX)
 
 ## Risks & Mitigation
 - **Risk**: Driver ID collision in concurrent scenarios
