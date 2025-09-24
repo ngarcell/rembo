@@ -57,12 +57,6 @@ class RegistrationVerifyRequest(BaseModel):
             raise ValueError("OTP must contain only digits")
         return v
 
-    @validator("email")
-    def validate_email(cls, v):
-        if v and "@" not in v:
-            raise ValueError("Invalid email format")
-        return v
-
 
 class RegistrationVerifyResponse(BaseModel):
     """Response schema for registration verification"""

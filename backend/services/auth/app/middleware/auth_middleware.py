@@ -147,6 +147,28 @@ class AuthMiddleware:
         return current_user
 
     @staticmethod
+    def require_manager(
+        current_user: UserProfile = Depends(get_current_user),
+    ) -> UserProfile:
+        """
+        Require manager role
+
+        Args:
+            current_user: Current user
+
+        Returns:
+            UserProfile: Manager user
+
+        Raises:
+            HTTPException: If user is not manager
+        """
+        if current_user.role.value != "manager":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Manager access required"
+            )
+        return current_user
+
+    @staticmethod
     def get_optional_user(
         credentials: Optional[HTTPAuthorizationCredentials] = Depends(
             HTTPBearer(auto_error=False)
@@ -181,4 +203,5 @@ class AuthMiddleware:
 get_current_user = AuthMiddleware.get_current_user
 get_current_active_user = AuthMiddleware.get_current_active_user
 require_admin = AuthMiddleware.require_admin
+require_manager = AuthMiddleware.require_manager
 get_optional_user = AuthMiddleware.get_optional_user

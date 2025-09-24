@@ -17,16 +17,18 @@ from app.api.v1.api import api_router
 from app.core.redis_client import redis_client
 from app.core.supabase_client import supabase_client
 from app.services.admin_service import AdminService
+from app.services.jwt_service import jwt_service
 
 # Security scheme
 security = HTTPBearer()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
     print("🚀 Auth Service starting up...")
-    
+
     # Create database tables
     init_db()
 
@@ -55,13 +57,14 @@ async def lifespan(app: FastAPI):
         print(f"❌ Supabase connection failed: {e}")
 
     print("✅ Auth Service startup complete")
-    
+
     yield
-    
+
     # Shutdown
     print("🛑 Auth Service shutting down...")
     redis_client.close()
     print("✅ Auth Service shutdown complete")
+
 
 # Create FastAPI application
 app = FastAPI(
@@ -70,7 +73,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # CORS middleware
@@ -85,6 +88,7 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
 
+
 @app.get("/")
 async def root():
     """Root endpoint for health check"""
@@ -92,11 +96,8 @@ async def root():
         "service": "Matatu Fleet Auth Service",
         "version": "1.0.0",
         "status": "healthy",
-        "docs": "/docs"
+        "docs": "/docs",
     }
-
-
-
 
 
 @app.get("/health")
@@ -106,7 +107,7 @@ def health_check():
         "status": "healthy",
         "database": "unknown",
         "redis": "unknown",
-        "supabase": "unknown"
+        "supabase": "unknown",
     }
 
     try:
@@ -137,16 +138,37 @@ def health_check():
 
     if health_status["status"] == "unhealthy":
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=health_status
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=health_status
         )
 
     return health_status
+
+
+@app.post("/debug/create-manager-token")
+def create_manager_token():
+    """Create a JWT token for testing manager functionality"""
+    # Use the Samuel Rembo Manager for testing
+    user_id = "b31f64ae-f16b-45ad-882a-446611533916"
+    phone = "+254700777666"
+    role = "manager"
+
+    access_token = jwt_service.create_access_token(
+        user_id=user_id, phone=phone, role=role
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user_id,
+        "phone": phone,
+        "role": role,
+    }
+
 
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True if os.getenv("ENVIRONMENT") == "development" else False
+        reload=True if os.getenv("ENVIRONMENT") == "development" else False,
     )
