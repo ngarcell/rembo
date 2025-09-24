@@ -71,17 +71,120 @@ CREATE TABLE drivers (
 -- Vehicle assignments
 CREATE TABLE vehicle_assignments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    vehicle_id UUID REFERENCES vehicles(id),
-    driver_id UUID REFERENCES drivers(id),
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    driver_id UUID NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+    manager_id UUID NOT NULL REFERENCES user_profiles(id),
+    fleet_id UUID NOT NULL REFERENCES fleets(id),
     assigned_at TIMESTAMP DEFAULT NOW(),
     unassigned_at TIMESTAMP,
     is_active BOOLEAN DEFAULT true,
-    notes TEXT
+    assignment_notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Add partial unique constraint for active assignments
-CREATE UNIQUE INDEX idx_vehicle_assignments_active_unique
+-- Add partial unique constraints for active assignments
+CREATE UNIQUE INDEX idx_vehicle_assignments_active_vehicle_unique
 ON vehicle_assignments(vehicle_id) WHERE is_active = true;
+
+CREATE UNIQUE INDEX idx_vehicle_assignments_active_driver_unique
+ON vehicle_assignments(driver_id) WHERE is_active = true;
+
+-- Add indexes for performance
+CREATE INDEX idx_vehicle_assignments_vehicle_id ON vehicle_assignments(vehicle_id);
+CREATE INDEX idx_vehicle_assignments_driver_id ON vehicle_assignments(driver_id);
+CREATE INDEX idx_vehicle_assignments_fleet_id ON vehicle_assignments(fleet_id);
+CREATE INDEX idx_vehicle_assignments_manager_id ON vehicle_assignments(manager_id);
+CREATE INDEX idx_vehicle_assignments_active ON vehicle_assignments(is_active) WHERE is_active = true;
+
+-- Vehicle status history
+CREATE TABLE vehicle_status_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    previous_status VARCHAR(50),
+    new_status VARCHAR(50) NOT NULL,
+    changed_by UUID NOT NULL REFERENCES user_profiles(id),
+    reason TEXT,
+    notes TEXT,
+    changed_at TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Maintenance records
+CREATE TABLE maintenance_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    maintenance_type VARCHAR(50) NOT NULL,
+    priority VARCHAR(20) DEFAULT 'medium',
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    scheduled_date TIMESTAMP,
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    assigned_to VARCHAR(200),
+    performed_by VARCHAR(200),
+    created_by UUID NOT NULL REFERENCES user_profiles(id),
+    estimated_cost INTEGER,
+    actual_cost INTEGER,
+    is_completed BOOLEAN DEFAULT false,
+    is_approved BOOLEAN DEFAULT false,
+    odometer_reading INTEGER,
+    next_service_km INTEGER,
+    next_service_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Vehicle documents
+CREATE TABLE vehicle_documents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    document_type VARCHAR(100) NOT NULL,
+    document_number VARCHAR(100),
+    issuer VARCHAR(200),
+    issued_date DATE,
+    expiry_date DATE,
+    is_active BOOLEAN DEFAULT true,
+    is_expired BOOLEAN DEFAULT false,
+    file_path VARCHAR(500),
+    file_name VARCHAR(200),
+    notes TEXT,
+    uploaded_by UUID NOT NULL REFERENCES user_profiles(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Vehicle inspections
+CREATE TABLE vehicle_inspections (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+    inspection_type VARCHAR(100) NOT NULL,
+    inspector_name VARCHAR(200),
+    inspection_station VARCHAR(200),
+    passed BOOLEAN,
+    score INTEGER,
+    inspection_date TIMESTAMP NOT NULL,
+    next_inspection_date TIMESTAMP,
+    findings TEXT,
+    recommendations TEXT,
+    certificate_number VARCHAR(100),
+    odometer_reading INTEGER,
+    created_by UUID NOT NULL REFERENCES user_profiles(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes for vehicle status tables
+CREATE INDEX idx_vehicle_status_history_vehicle_id ON vehicle_status_history(vehicle_id);
+CREATE INDEX idx_vehicle_status_history_changed_at ON vehicle_status_history(changed_at);
+CREATE INDEX idx_maintenance_records_vehicle_id ON maintenance_records(vehicle_id);
+CREATE INDEX idx_maintenance_records_priority ON maintenance_records(priority);
+CREATE INDEX idx_maintenance_records_completed ON maintenance_records(is_completed);
+CREATE INDEX idx_vehicle_documents_vehicle_id ON vehicle_documents(vehicle_id);
+CREATE INDEX idx_vehicle_documents_type ON vehicle_documents(document_type);
+CREATE INDEX idx_vehicle_documents_expiry ON vehicle_documents(expiry_date);
+CREATE INDEX idx_vehicle_inspections_vehicle_id ON vehicle_inspections(vehicle_id);
+CREATE INDEX idx_vehicle_inspections_date ON vehicle_inspections(inspection_date);
 
 -- Routes
 CREATE TABLE routes (
