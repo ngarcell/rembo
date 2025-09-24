@@ -25,51 +25,69 @@ class VehicleService:
         vehicle_data: VehicleRegistrationRequest,
         manager_id: str,
         fleet_id: str,
-        db: Session
+        db: Session,
     ) -> Tuple[bool, Optional[Vehicle], Optional[str]]:
         """
         Register a new vehicle
-        
+
         Args:
             vehicle_data: Vehicle registration data
             manager_id: Manager registering the vehicle
             fleet_id: Fleet ID where vehicle belongs
             db: Database session
-            
+
         Returns:
             Tuple of (success, vehicle, error_message)
         """
         try:
             # Verify manager has access to this fleet
-            manager = db.query(UserProfile).filter(
-                and_(
-                    UserProfile.id == manager_id,
-                    UserProfile.fleet_id == fleet_id,
-                    UserProfile.role == "manager"
+            manager = (
+                db.query(UserProfile)
+                .filter(
+                    and_(
+                        UserProfile.id == manager_id,
+                        UserProfile.fleet_id == fleet_id,
+                        UserProfile.role == "manager",
+                    )
                 )
-            ).first()
-            
+                .first()
+            )
+
             if not manager:
                 return False, None, "Manager not authorized for this fleet"
 
             # Check license plate uniqueness
-            existing_vehicle = db.query(Vehicle).filter(
-                Vehicle.license_plate == vehicle_data.license_plate
-            ).first()
-            
+            existing_vehicle = (
+                db.query(Vehicle)
+                .filter(Vehicle.license_plate == vehicle_data.license_plate)
+                .first()
+            )
+
             if existing_vehicle:
-                return False, None, f"License plate {vehicle_data.license_plate} already exists"
+                return (
+                    False,
+                    None,
+                    f"License plate {vehicle_data.license_plate} already exists",
+                )
 
             # Check fleet number uniqueness within fleet
-            existing_fleet_number = db.query(Vehicle).filter(
-                and_(
-                    Vehicle.fleet_id == fleet_id,
-                    Vehicle.fleet_number == vehicle_data.fleet_number
+            existing_fleet_number = (
+                db.query(Vehicle)
+                .filter(
+                    and_(
+                        Vehicle.fleet_id == fleet_id,
+                        Vehicle.fleet_number == vehicle_data.fleet_number,
+                    )
                 )
-            ).first()
-            
+                .first()
+            )
+
             if existing_fleet_number:
-                return False, None, f"Fleet number {vehicle_data.fleet_number} already exists in this fleet"
+                return (
+                    False,
+                    None,
+                    f"Fleet number {vehicle_data.fleet_number} already exists in this fleet",
+                )
 
             # Encrypt GPS API key if provided
             encrypted_api_key = None
@@ -88,14 +106,16 @@ class VehicleService:
                 sim_number=vehicle_data.sim_number,
                 gps_api_key=encrypted_api_key,
                 status=VehicleStatus.ACTIVE,
-                is_active=True
+                is_active=True,
             )
 
             db.add(vehicle)
             db.commit()
             db.refresh(vehicle)
 
-            logger.info(f"Vehicle registered: {vehicle.license_plate} by manager {manager_id}")
+            logger.info(
+                f"Vehicle registered: {vehicle.license_plate} by manager {manager_id}"
+            )
             return True, vehicle, None
 
         except Exception as e:
@@ -112,11 +132,11 @@ class VehicleService:
         limit: int = 20,
         search: Optional[str] = None,
         status: Optional[str] = None,
-        vehicle_type: Optional[str] = None
+        vehicle_type: Optional[str] = None,
     ) -> Tuple[List[Vehicle], int]:
         """
         Get vehicles for a fleet with filtering and pagination
-        
+
         Args:
             fleet_id: Fleet ID
             manager_id: Manager ID (for access control)
@@ -126,20 +146,24 @@ class VehicleService:
             search: Search term
             status: Filter by status
             vehicle_type: Filter by vehicle type
-            
+
         Returns:
             Tuple of (vehicles, total_count)
         """
         try:
             # Verify manager has access to this fleet
-            manager = db.query(UserProfile).filter(
-                and_(
-                    UserProfile.id == manager_id,
-                    UserProfile.fleet_id == fleet_id,
-                    UserProfile.role == "manager"
+            manager = (
+                db.query(UserProfile)
+                .filter(
+                    and_(
+                        UserProfile.id == manager_id,
+                        UserProfile.fleet_id == fleet_id,
+                        UserProfile.role == "manager",
+                    )
                 )
-            ).first()
-            
+                .first()
+            )
+
             if not manager:
                 return [], 0
 
@@ -155,7 +179,7 @@ class VehicleService:
                         Vehicle.fleet_number.ilike(search_term),
                         Vehicle.make.ilike(search_term),
                         Vehicle.model.ilike(search_term),
-                        Vehicle.route.ilike(search_term)
+                        Vehicle.route.ilike(search_term),
                     )
                 )
 
@@ -170,7 +194,12 @@ class VehicleService:
 
             # Apply pagination
             offset = (page - 1) * limit
-            vehicles = query.order_by(Vehicle.created_at.desc()).offset(offset).limit(limit).all()
+            vehicles = (
+                query.order_by(Vehicle.created_at.desc())
+                .offset(offset)
+                .limit(limit)
+                .all()
+            )
 
             return vehicles, total_count
 
@@ -180,30 +209,33 @@ class VehicleService:
 
     @staticmethod
     def get_vehicle_by_id(
-        vehicle_id: str,
-        manager_id: str,
-        db: Session
+        vehicle_id: str, manager_id: str, db: Session
     ) -> Optional[Vehicle]:
         """
         Get vehicle by ID with access control
-        
+
         Args:
             vehicle_id: Vehicle ID
             manager_id: Manager ID (for access control)
             db: Database session
-            
+
         Returns:
             Vehicle or None
         """
         try:
             # Get vehicle with fleet access check
-            vehicle = db.query(Vehicle).join(UserProfile, Vehicle.fleet_id == UserProfile.fleet_id).filter(
-                and_(
-                    Vehicle.id == vehicle_id,
-                    UserProfile.id == manager_id,
-                    UserProfile.role == "manager"
+            vehicle = (
+                db.query(Vehicle)
+                .join(UserProfile, Vehicle.fleet_id == UserProfile.fleet_id)
+                .filter(
+                    and_(
+                        Vehicle.id == vehicle_id,
+                        UserProfile.id == manager_id,
+                        UserProfile.role == "manager",
+                    )
                 )
-            ).first()
+                .first()
+            )
 
             return vehicle
 
@@ -216,17 +248,17 @@ class VehicleService:
         vehicle_id: str,
         vehicle_data: VehicleUpdateRequest,
         manager_id: str,
-        db: Session
+        db: Session,
     ) -> Tuple[bool, Optional[Vehicle], Optional[str]]:
         """
         Update vehicle information
-        
+
         Args:
             vehicle_id: Vehicle ID
             vehicle_data: Updated vehicle data
             manager_id: Manager updating the vehicle
             db: Database session
-            
+
         Returns:
             Tuple of (success, vehicle, error_message)
         """
@@ -237,29 +269,51 @@ class VehicleService:
                 return False, None, "Vehicle not found or access denied"
 
             # Check license plate uniqueness if being updated
-            if vehicle_data.license_plate and vehicle_data.license_plate != vehicle.license_plate:
-                existing_vehicle = db.query(Vehicle).filter(
-                    and_(
-                        Vehicle.license_plate == vehicle_data.license_plate,
-                        Vehicle.id != vehicle_id
+            if (
+                vehicle_data.license_plate
+                and vehicle_data.license_plate != vehicle.license_plate
+            ):
+                existing_vehicle = (
+                    db.query(Vehicle)
+                    .filter(
+                        and_(
+                            Vehicle.license_plate == vehicle_data.license_plate,
+                            Vehicle.id != vehicle_id,
+                        )
                     )
-                ).first()
-                
+                    .first()
+                )
+
                 if existing_vehicle:
-                    return False, None, f"License plate {vehicle_data.license_plate} already exists"
+                    return (
+                        False,
+                        None,
+                        f"License plate {vehicle_data.license_plate} already exists",
+                    )
 
             # Check fleet number uniqueness if being updated
-            if vehicle_data.fleet_number and vehicle_data.fleet_number != vehicle.fleet_number:
-                existing_fleet_number = db.query(Vehicle).filter(
-                    and_(
-                        Vehicle.fleet_id == vehicle.fleet_id,
-                        Vehicle.fleet_number == vehicle_data.fleet_number,
-                        Vehicle.id != vehicle_id
+            if (
+                vehicle_data.fleet_number
+                and vehicle_data.fleet_number != vehicle.fleet_number
+            ):
+                existing_fleet_number = (
+                    db.query(Vehicle)
+                    .filter(
+                        and_(
+                            Vehicle.fleet_id == vehicle.fleet_id,
+                            Vehicle.fleet_number == vehicle_data.fleet_number,
+                            Vehicle.id != vehicle_id,
+                        )
                     )
-                ).first()
-                
+                    .first()
+                )
+
                 if existing_fleet_number:
-                    return False, None, f"Fleet number {vehicle_data.fleet_number} already exists in this fleet"
+                    return (
+                        False,
+                        None,
+                        f"Fleet number {vehicle_data.fleet_number} already exists in this fleet",
+                    )
 
             # Update fields
             update_data = vehicle_data.model_dump(exclude_unset=True)
@@ -268,14 +322,16 @@ class VehicleService:
                     setattr(vehicle, field, value)
 
             vehicle.updated_at = datetime.utcnow()
-            
+
             # Update compliance status
             vehicle.update_status_based_on_compliance()
 
             db.commit()
             db.refresh(vehicle)
 
-            logger.info(f"Vehicle updated: {vehicle.license_plate} by manager {manager_id}")
+            logger.info(
+                f"Vehicle updated: {vehicle.license_plate} by manager {manager_id}"
+            )
             return True, vehicle, None
 
         except Exception as e:

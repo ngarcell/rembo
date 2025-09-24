@@ -5,7 +5,16 @@ Vehicle model for managing fleet vehicles
 import uuid
 from datetime import datetime, date
 from typing import Optional
-from sqlalchemy import Column, String, DateTime, Boolean, Integer, Date, Text, ForeignKey
+from sqlalchemy import (
+    Column,
+    String,
+    DateTime,
+    Boolean,
+    Integer,
+    Date,
+    Text,
+    ForeignKey,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from enum import Enum
@@ -15,6 +24,7 @@ from app.core.database import Base
 
 class VehicleStatus(str, Enum):
     """Vehicle status enumeration"""
+
     ACTIVE = "active"
     MAINTENANCE = "maintenance"
     INACTIVE = "inactive"
@@ -24,6 +34,7 @@ class VehicleStatus(str, Enum):
 
 class VehicleType(str, Enum):
     """Vehicle type enumeration"""
+
     MATATU = "matatu"
     BUS = "bus"
     VAN = "van"
@@ -38,11 +49,15 @@ class Vehicle(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     fleet_id = Column(UUID(as_uuid=True), ForeignKey("fleets.id"), nullable=False)
-    manager_id = Column(UUID(as_uuid=True), ForeignKey("user_profiles.id"), nullable=True)
+    manager_id = Column(
+        UUID(as_uuid=True), ForeignKey("user_profiles.id"), nullable=True
+    )
 
     # Basic Information
     fleet_number = Column(String(20), nullable=False)  # Unique within fleet
-    license_plate = Column(String(20), unique=True, nullable=False)  # Unique across system
+    license_plate = Column(
+        String(20), unique=True, nullable=False
+    )  # Unique across system
     vehicle_type = Column(String(50), nullable=True)
     make = Column(String(100), nullable=True)
     model = Column(String(100), nullable=True)
@@ -94,11 +109,19 @@ class Vehicle(Base):
             "gps_provider": self.gps_provider,
             "route": self.route,
             "status": self.status,
-            "registration_date": self.registration_date.isoformat() if self.registration_date else None,
+            "registration_date": (
+                self.registration_date.isoformat() if self.registration_date else None
+            ),
             "insurance_policy": self.insurance_policy,
-            "insurance_expiry": self.insurance_expiry.isoformat() if self.insurance_expiry else None,
-            "last_inspection": self.last_inspection.isoformat() if self.last_inspection else None,
-            "next_inspection": self.next_inspection.isoformat() if self.next_inspection else None,
+            "insurance_expiry": (
+                self.insurance_expiry.isoformat() if self.insurance_expiry else None
+            ),
+            "last_inspection": (
+                self.last_inspection.isoformat() if self.last_inspection else None
+            ),
+            "next_inspection": (
+                self.next_inspection.isoformat() if self.next_inspection else None
+            ),
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
