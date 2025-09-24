@@ -24,18 +24,30 @@ router = APIRouter()
 # Request/Response Models
 class RegisterDriverRequest(BaseModel):
     """Request model for driver registration"""
-    
-    first_name: str = Field(..., min_length=1, max_length=100, description="Driver's first name")
-    last_name: str = Field(..., min_length=1, max_length=100, description="Driver's last name")
+
+    first_name: str = Field(
+        ..., min_length=1, max_length=100, description="Driver's first name"
+    )
+    last_name: str = Field(
+        ..., min_length=1, max_length=100, description="Driver's last name"
+    )
     phone: str = Field(..., description="Driver's phone number")
-    email: Optional[str] = Field(None, max_length=255, description="Driver's email address")
+    email: Optional[str] = Field(
+        None, max_length=255, description="Driver's email address"
+    )
     date_of_birth: Optional[date] = Field(None, description="Driver's date of birth")
-    national_id: Optional[str] = Field(None, max_length=50, description="Driver's national ID")
-    license_number: str = Field(..., min_length=1, max_length=50, description="Driver's license number")
-    license_class: str = Field(..., min_length=1, max_length=10, description="Driver's license class")
+    national_id: Optional[str] = Field(
+        None, max_length=50, description="Driver's national ID"
+    )
+    license_number: str = Field(
+        ..., min_length=1, max_length=50, description="Driver's license number"
+    )
+    license_class: str = Field(
+        ..., min_length=1, max_length=10, description="Driver's license class"
+    )
     license_expiry: date = Field(..., description="License expiry date")
     hire_date: Optional[date] = Field(None, description="Hire date (defaults to today)")
-    
+
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v):
@@ -56,7 +68,7 @@ class RegisterDriverRequest(BaseModel):
 
 class DriverResponse(BaseModel):
     """Response model for driver information"""
-    
+
     id: str
     driver_id: str
     first_name: str
@@ -79,7 +91,7 @@ class DriverResponse(BaseModel):
 
 class RegisterDriverResponse(BaseModel):
     """Response model for driver registration"""
-    
+
     success: bool
     message: str
     driver: DriverResponse
@@ -88,7 +100,7 @@ class RegisterDriverResponse(BaseModel):
 
 class DriverListResponse(BaseModel):
     """Response model for driver list"""
-    
+
     drivers: List[DriverResponse]
     total_count: int
     page: int
@@ -98,7 +110,7 @@ class DriverListResponse(BaseModel):
 
 class DriverDetailsResponse(BaseModel):
     """Response model for driver details"""
-    
+
     driver: DriverResponse
     fleet_name: Optional[str] = None
 
@@ -117,12 +129,12 @@ def register_driver(
 ):
     """
     Register a new driver (Manager only)
-    
+
     Args:
         request: Driver registration request
         db: Database session
         manager: Current manager user
-        
+
     Returns:
         RegisterDriverResponse: Registration result with driver details
     """
@@ -141,12 +153,12 @@ def register_driver(
             license_class=request.license_class,
             license_expiry=request.license_expiry,
             hire_date=request.hire_date,
-            db=db
+            db=db,
         )
-        
+
         if not success:
             error_code = response_data.get("error_code", "UNKNOWN_ERROR")
-            
+
             if error_code in ["PHONE_EXISTS", "LICENSE_EXISTS"]:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
@@ -167,14 +179,14 @@ def register_driver(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=response_data["message"],
                 )
-        
+
         return RegisterDriverResponse(
             success=True,
             message=response_data["message"],
             driver=DriverResponse(**response_data["driver"]),
-            fleet_name=response_data["fleet_name"]
+            fleet_name=response_data["fleet_name"],
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -201,7 +213,7 @@ def list_drivers(
 ):
     """
     List drivers in manager's fleet
-    
+
     Args:
         page: Page number (1-based)
         limit: Items per page
@@ -209,7 +221,7 @@ def list_drivers(
         status: Filter by employment status
         db: Database session
         manager: Current manager user
-        
+
     Returns:
         DriverListResponse: List of drivers with pagination
     """
@@ -221,12 +233,12 @@ def list_drivers(
             limit=limit,
             search=search,
             status_filter=status,
-            db=db
+            db=db,
         )
-        
+
         if not success:
             error_code = response_data.get("error_code", "UNKNOWN_ERROR")
-            
+
             if error_code == "ACCESS_DENIED":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -237,15 +249,15 @@ def list_drivers(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=response_data["message"],
                 )
-        
+
         return DriverListResponse(
             drivers=[DriverResponse(**driver) for driver in response_data["drivers"]],
             total_count=response_data["total_count"],
             page=response_data["page"],
             limit=response_data["limit"],
-            total_pages=response_data["total_pages"]
+            total_pages=response_data["total_pages"],
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -269,25 +281,23 @@ def get_driver(
 ):
     """
     Get driver details (Manager only)
-    
+
     Args:
         driver_id: Driver's UUID
         db: Database session
         manager: Current manager user
-        
+
     Returns:
         DriverDetailsResponse: Driver details
     """
     try:
         success, response_data = driver_service.get_driver_details(
-            manager_id=str(manager.user_id),
-            driver_id=str(driver_id),
-            db=db
+            manager_id=str(manager.user_id), driver_id=str(driver_id), db=db
         )
-        
+
         if not success:
             error_code = response_data.get("error_code", "UNKNOWN_ERROR")
-            
+
             if error_code == "DRIVER_NOT_FOUND":
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -298,13 +308,13 @@ def get_driver(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=response_data["message"],
                 )
-        
+
         driver_data = response_data["driver"]
         return DriverDetailsResponse(
             driver=DriverResponse(**driver_data),
-            fleet_name=driver_data.get("fleet_name")
+            fleet_name=driver_data.get("fleet_name"),
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:

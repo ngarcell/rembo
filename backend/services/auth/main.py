@@ -22,12 +22,13 @@ from app.services.jwt_service import jwt_service
 # Security scheme
 security = HTTPBearer()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
     print("🚀 Auth Service starting up...")
-    
+
     # Create database tables
     init_db()
 
@@ -56,13 +57,14 @@ async def lifespan(app: FastAPI):
         print(f"❌ Supabase connection failed: {e}")
 
     print("✅ Auth Service startup complete")
-    
+
     yield
-    
+
     # Shutdown
     print("🛑 Auth Service shutting down...")
     redis_client.close()
     print("✅ Auth Service shutdown complete")
+
 
 # Create FastAPI application
 app = FastAPI(
@@ -71,7 +73,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # CORS middleware
@@ -86,6 +88,7 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
 
+
 @app.get("/")
 async def root():
     """Root endpoint for health check"""
@@ -93,11 +96,8 @@ async def root():
         "service": "Matatu Fleet Auth Service",
         "version": "1.0.0",
         "status": "healthy",
-        "docs": "/docs"
+        "docs": "/docs",
     }
-
-
-
 
 
 @app.get("/health")
@@ -107,7 +107,7 @@ def health_check():
         "status": "healthy",
         "database": "unknown",
         "redis": "unknown",
-        "supabase": "unknown"
+        "supabase": "unknown",
     }
 
     try:
@@ -138,8 +138,7 @@ def health_check():
 
     if health_status["status"] == "unhealthy":
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=health_status
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=health_status
         )
 
     return health_status
@@ -154,9 +153,7 @@ def create_manager_token():
     role = "manager"
 
     access_token = jwt_service.create_access_token(
-        user_id=user_id,
-        phone=phone,
-        role=role
+        user_id=user_id, phone=phone, role=role
     )
 
     return {
@@ -164,7 +161,7 @@ def create_manager_token():
         "token_type": "bearer",
         "user_id": user_id,
         "phone": phone,
-        "role": role
+        "role": role,
     }
 
 
@@ -173,5 +170,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True if os.getenv("ENVIRONMENT") == "development" else False
+        reload=True if os.getenv("ENVIRONMENT") == "development" else False,
     )

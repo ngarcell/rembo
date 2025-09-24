@@ -58,8 +58,6 @@ class RegistrationVerifyRequest(BaseModel):
         return v
 
 
-
-
 class RegistrationVerifyResponse(BaseModel):
     """Response schema for registration verification"""
 

@@ -30,7 +30,9 @@ class CreateManagerRequest(BaseModel):
     phone: str = Field(..., description="Manager's phone number")
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
-    fleet_name: Optional[str] = Field(None, max_length=200, description="Fleet to assign manager to")
+    fleet_name: Optional[str] = Field(
+        None, max_length=200, description="Fleet to assign manager to"
+    )
 
 
 class ManagerResponse(BaseModel):
@@ -123,7 +125,7 @@ def create_manager(
 
         if not success:
             error_code = response_data.get("error_code", "UNKNOWN_ERROR")
-            
+
             if error_code == "PHONE_EXISTS":
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
@@ -234,7 +236,7 @@ def get_manager(
 
         if not success:
             error_code = response_data.get("error_code", "UNKNOWN_ERROR")
-            
+
             if error_code == "MANAGER_NOT_FOUND":
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -289,7 +291,7 @@ def activate_manager(
 
         if not success:
             error_code = response_data.get("error_code", "UNKNOWN_ERROR")
-            
+
             if error_code == "MANAGER_NOT_FOUND":
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -344,7 +346,7 @@ def deactivate_manager(
 
         if not success:
             error_code = response_data.get("error_code", "UNKNOWN_ERROR")
-            
+
             if error_code == "MANAGER_NOT_FOUND":
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,

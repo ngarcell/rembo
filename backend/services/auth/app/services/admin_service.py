@@ -231,7 +231,9 @@ class AdminService:
                     "is_active": manager.is_active,
                     "fleet_name": fleet_name,
                     "created_at": manager.created_at.isoformat(),
-                    "last_login": manager.last_login.isoformat() if manager.last_login else None,
+                    "last_login": (
+                        manager.last_login.isoformat() if manager.last_login else None
+                    ),
                 }
                 manager_list.append(manager_data)
 
@@ -247,9 +249,7 @@ class AdminService:
                 "message": "Failed to retrieve managers",
             }
 
-    def get_manager(
-        self, manager_id: str, db: Session
-    ) -> Tuple[bool, Dict[str, Any]]:
+    def get_manager(self, manager_id: str, db: Session) -> Tuple[bool, Dict[str, Any]]:
         """
         Get manager details by ID
 
@@ -291,7 +291,9 @@ class AdminService:
                 "is_active": manager.is_active,
                 "fleet_name": fleet_name,
                 "created_at": manager.created_at.isoformat(),
-                "last_login": manager.last_login.isoformat() if manager.last_login else None,
+                "last_login": (
+                    manager.last_login.isoformat() if manager.last_login else None
+                ),
             }
 
             return True, {"manager": manager_data}
@@ -335,12 +337,12 @@ class AdminService:
 
             # Update manager status
             manager.is_active = True
-            
+
             # Update in Supabase
             try:
-                supabase_client.table("user_profiles").update({
-                    "is_active": True
-                }).eq("user_id", manager_id).execute()
+                supabase_client.table("user_profiles").update({"is_active": True}).eq(
+                    "user_id", manager_id
+                ).execute()
             except Exception as e:
                 logger.error(f"Supabase manager activation error: {e}")
 
@@ -400,12 +402,12 @@ class AdminService:
 
             # Update manager status
             manager.is_active = False
-            
+
             # Update in Supabase
             try:
-                supabase_client.table("user_profiles").update({
-                    "is_active": False
-                }).eq("user_id", manager_id).execute()
+                supabase_client.table("user_profiles").update({"is_active": False}).eq(
+                    "user_id", manager_id
+                ).execute()
             except Exception as e:
                 logger.error(f"Supabase manager deactivation error: {e}")
 

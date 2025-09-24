@@ -18,7 +18,9 @@ class Fleet(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
-    manager_id = Column(UUID(as_uuid=True), nullable=True)  # References user_profiles(id)
+    manager_id = Column(
+        UUID(as_uuid=True), nullable=True
+    )  # References user_profiles(id)
     fleet_code = Column(String(10), unique=True, nullable=False)
     description = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
