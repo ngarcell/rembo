@@ -171,3 +171,6 @@ class Vehicle(Base):
             self.status = VehicleStatus.INACTIVE
         elif self.status == VehicleStatus.INSPECTION_DUE and not self.is_inspection_due:
             self.status = VehicleStatus.ACTIVE
+
+    # Relationships (defined at the end to avoid circular imports)
+    # Note: These relationships are defined in the related models to avoid circular imports

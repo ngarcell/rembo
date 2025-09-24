@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     assignment,
     manager,
     vehicle,
+    vehicle_status,
 )
 
 api_router = APIRouter()
@@ -23,3 +24,6 @@ api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(assignment.router, prefix="/manager", tags=["assignments"])
 api_router.include_router(manager.router, prefix="/manager", tags=["manager"])
 api_router.include_router(vehicle.router, prefix="/manager", tags=["manager"])
+api_router.include_router(
+    vehicle_status.router, prefix="/manager", tags=["vehicle-status"]
+)
