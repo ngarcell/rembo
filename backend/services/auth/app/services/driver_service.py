@@ -9,7 +9,7 @@ from typing import Dict, Any, Tuple, List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
-from app.models.driver_profile import DriverProfile, EmploymentStatus
+from app.models.simple_driver import SimpleDriver
 from app.models.user_profile import UserProfile, UserRole
 from app.models.fleet import Fleet
 from app.services.driver_id_service import DriverIDService
@@ -113,7 +113,7 @@ class DriverService:
 
             # Check if phone number is already registered
             existing_driver = (
-                db.query(DriverProfile).filter(DriverProfile.phone == phone).first()
+                db.query(SimpleDriver).filter(SimpleDriver.phone == phone).first()
             )
 
             if existing_driver:
@@ -124,8 +124,8 @@ class DriverService:
 
             # Check if license number is already registered
             existing_license = (
-                db.query(DriverProfile)
-                .filter(DriverProfile.license_number == license_number)
+                db.query(SimpleDriver)
+                .filter(SimpleDriver.license_number == license_number)
                 .first()
             )
 
@@ -146,21 +146,11 @@ class DriverService:
                 }
 
             # Create driver profile
-            driver = DriverProfile(
-                driver_id=driver_id,
+            driver = SimpleDriver(
+                driver_code=driver_id,
                 fleet_id=fleet_id,
-                manager_id=manager.id,
-                first_name=first_name,
-                last_name=last_name,
-                phone=phone,
-                email=email,
-                date_of_birth=date_of_birth,
-                national_id=national_id,
                 license_number=license_number,
-                license_class=license_class,
                 license_expiry=license_expiry,
-                hire_date=hire_date or date.today(),
-                employment_status=EmploymentStatus.ACTIVE.value,
                 is_active=True,
             )
 
@@ -233,24 +223,24 @@ class DriverService:
                 }
 
             # Build query
-            query = db.query(DriverProfile).filter(DriverProfile.fleet_id == fleet_id)
+            query = db.query(SimpleDriver).filter(SimpleDriver.fleet_id == fleet_id)
 
             # Apply search filter
             if search:
                 search_term = f"%{search}%"
                 query = query.filter(
                     or_(
-                        DriverProfile.first_name.ilike(search_term),
-                        DriverProfile.last_name.ilike(search_term),
-                        DriverProfile.phone.ilike(search_term),
-                        DriverProfile.driver_id.ilike(search_term),
-                        DriverProfile.license_number.ilike(search_term),
+                        SimpleDriver.first_name.ilike(search_term),
+                        SimpleDriver.last_name.ilike(search_term),
+                        SimpleDriver.phone.ilike(search_term),
+                        SimpleDriver.driver_id.ilike(search_term),
+                        SimpleDriver.license_number.ilike(search_term),
                     )
                 )
 
             # Apply status filter
             if status_filter:
-                query = query.filter(DriverProfile.employment_status == status_filter)
+                query = query.filter(SimpleDriver.employment_status == status_filter)
 
             # Get total count
             total_count = query.count()
@@ -294,11 +284,11 @@ class DriverService:
         try:
             # Get driver with fleet access validation
             driver = (
-                db.query(DriverProfile)
-                .join(UserProfile, UserProfile.id == DriverProfile.manager_id)
+                db.query(SimpleDriver)
+                .join(UserProfile, UserProfile.id == SimpleDriver.manager_id)
                 .filter(
                     and_(
-                        DriverProfile.id == driver_id,
+                        SimpleDriver.id == driver_id,
                         UserProfile.user_id == manager_id,
                         UserProfile.role == UserRole.MANAGER,
                         UserProfile.is_active == True,

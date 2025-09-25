@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, func
 from math import ceil
 
-from app.models.vehicle import Vehicle
+from app.models.simple_vehicle import SimpleVehicle
 from app.models.vehicle_status import (
     VehicleStatusHistory,
     MaintenanceRecord,
@@ -53,8 +53,12 @@ class VehicleStatusService:
         try:
             # Get vehicle
             vehicle = (
-                db.query(Vehicle)
-                .filter(and_(Vehicle.id == vehicle_id, Vehicle.is_active == True))
+                db.query(SimpleVehicle)
+                .filter(
+                    and_(
+                        SimpleVehicle.id == vehicle_id, SimpleVehicle.is_active == True
+                    )
+                )
                 .first()
             )
 
@@ -127,8 +131,12 @@ class VehicleStatusService:
         try:
             # Verify access
             vehicle = (
-                db.query(Vehicle)
-                .filter(and_(Vehicle.id == vehicle_id, Vehicle.is_active == True))
+                db.query(SimpleVehicle)
+                .filter(
+                    and_(
+                        SimpleVehicle.id == vehicle_id, SimpleVehicle.is_active == True
+                    )
+                )
                 .first()
             )
 
@@ -215,8 +223,12 @@ class VehicleStatusService:
         try:
             # Verify access
             vehicle = (
-                db.query(Vehicle)
-                .filter(and_(Vehicle.id == vehicle_id, Vehicle.is_active == True))
+                db.query(SimpleVehicle)
+                .filter(
+                    and_(
+                        SimpleVehicle.id == vehicle_id, SimpleVehicle.is_active == True
+                    )
+                )
                 .first()
             )
 
@@ -326,8 +338,13 @@ class VehicleStatusService:
             # Build query
             query = (
                 db.query(MaintenanceRecord)
-                .join(Vehicle)
-                .filter(and_(Vehicle.fleet_id == fleet_id, Vehicle.is_active == True))
+                .join(SimpleVehicle)
+                .filter(
+                    and_(
+                        SimpleVehicle.fleet_id == fleet_id,
+                        SimpleVehicle.is_active == True,
+                    )
+                )
             )
 
             # Apply filters
@@ -355,7 +372,9 @@ class VehicleStatusService:
             maintenance_list = []
             for record in records:
                 vehicle = (
-                    db.query(Vehicle).filter(Vehicle.id == record.vehicle_id).first()
+                    db.query(SimpleVehicle)
+                    .filter(SimpleVehicle.id == record.vehicle_id)
+                    .first()
                 )
                 vehicle_info = (
                     f"{vehicle.fleet_number} ({vehicle.license_plate})"

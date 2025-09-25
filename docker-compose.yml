@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -49,86 +47,8 @@ services:
       - ./backend/services/auth:/app
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-  # Fleet Service
-  fleet-service:
-    build:
-      context: ./backend/services/fleet
-      dockerfile: Dockerfile
-    container_name: matatu-fleet
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/matatu_fleet
-      - REDIS_URL=redis://redis:6379
-      - AUTH_SERVICE_URL=http://auth-service:8000
-    ports:
-      - "8002:8000"
-    depends_on:
-      - postgres
-      - redis
-      - auth-service
-    networks:
-      - matatu-network
-    volumes:
-      - ./backend/services/fleet:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-  # Booking Service
-  booking-service:
-    build:
-      context: ./backend/services/booking
-      dockerfile: Dockerfile
-    container_name: matatu-booking
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/matatu_fleet
-      - REDIS_URL=redis://redis:6379
-      - AUTH_SERVICE_URL=http://auth-service:8000
-      - FLEET_SERVICE_URL=http://fleet-service:8000
-    ports:
-      - "8003:8000"
-    depends_on:
-      - postgres
-      - redis
-      - auth-service
-      - fleet-service
-    networks:
-      - matatu-network
-    volumes:
-      - ./backend/services/booking:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-  # Frontend (React PWA)
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: matatu-frontend
-    environment:
-      - REACT_APP_API_BASE_URL=http://localhost:8080
-      - REACT_APP_MAPBOX_TOKEN=${MAPBOX_TOKEN}
-      - REACT_APP_SUPABASE_URL=${SUPABASE_URL}
-      - REACT_APP_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    networks:
-      - matatu-network
-    command: npm start
-
-  # API Gateway (Nginx)
-  api-gateway:
-    image: nginx:alpine
-    container_name: matatu-gateway
-    ports:
-      - "8080:80"
-    volumes:
-      - ./infrastructure/nginx.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - auth-service
-      - fleet-service
-      - booking-service
-    networks:
-      - matatu-network
+  # Note: Fleet Service, Booking Service, and Frontend will be added in future stories
+  # Currently only Auth Service is implemented
 
 volumes:
   postgres_data:
