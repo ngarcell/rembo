@@ -126,7 +126,9 @@ class AssignmentService:
             db.refresh(assignment)
 
             # Get additional info for response
-            driver_name = f"{driver.first_name} {driver.last_name}"
+            driver_name = (
+                driver.driver_code
+            )  # Use driver code since we don't have first/last name
             vehicle_info = f"{vehicle.fleet_number} ({vehicle.license_plate})"
 
             logger.info(
@@ -200,11 +202,7 @@ class AssignmentService:
                     .filter(SimpleDriver.id == assignment.driver_id)
                     .first()
                 )
-                driver_name = (
-                    f"{driver.first_name} {driver.last_name}"
-                    if driver
-                    else "Unknown Driver"
-                )
+                driver_name = driver.driver_code if driver else "Unknown Driver"
 
                 # Get vehicle info
                 vehicle = (
@@ -339,7 +337,7 @@ class AssignmentService:
                     {
                         "id": str(driver.id),
                         "driver_id": driver.driver_id,
-                        "name": f"{driver.first_name} {driver.last_name}",
+                        "name": driver.driver_code,
                         "phone": driver.phone,
                         "license_number": driver.license_number,
                     }

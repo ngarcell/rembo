@@ -53,13 +53,7 @@ class VehicleStatusService:
         try:
             # Get vehicle
             vehicle = (
-                db.query(SimpleVehicle)
-                .filter(
-                    and_(
-                        SimpleVehicle.id == vehicle_id, SimpleVehicle.is_active == True
-                    )
-                )
-                .first()
+                db.query(SimpleVehicle).filter(SimpleVehicle.id == vehicle_id).first()
             )
 
             if not vehicle:
@@ -131,13 +125,7 @@ class VehicleStatusService:
         try:
             # Verify access
             vehicle = (
-                db.query(SimpleVehicle)
-                .filter(
-                    and_(
-                        SimpleVehicle.id == vehicle_id, SimpleVehicle.is_active == True
-                    )
-                )
-                .first()
+                db.query(SimpleVehicle).filter(SimpleVehicle.id == vehicle_id).first()
             )
 
             if not vehicle:
@@ -223,13 +211,7 @@ class VehicleStatusService:
         try:
             # Verify access
             vehicle = (
-                db.query(SimpleVehicle)
-                .filter(
-                    and_(
-                        SimpleVehicle.id == vehicle_id, SimpleVehicle.is_active == True
-                    )
-                )
-                .first()
+                db.query(SimpleVehicle).filter(SimpleVehicle.id == vehicle_id).first()
             )
 
             if not vehicle:
@@ -339,12 +321,7 @@ class VehicleStatusService:
             query = (
                 db.query(MaintenanceRecord)
                 .join(SimpleVehicle)
-                .filter(
-                    and_(
-                        SimpleVehicle.fleet_id == fleet_id,
-                        SimpleVehicle.is_active == True,
-                    )
-                )
+                .filter(SimpleVehicle.fleet_id == fleet_id)
             )
 
             # Apply filters

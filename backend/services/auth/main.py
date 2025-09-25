@@ -18,6 +18,7 @@ from app.core.redis_client import redis_client
 from app.core.supabase_client import supabase_client
 from app.services.admin_service import AdminService
 from app.services.jwt_service import jwt_service
+from app.middleware.auth_middleware import require_manager
 
 # Security scheme
 security = HTTPBearer()
@@ -162,6 +163,18 @@ def create_manager_token():
         "user_id": user_id,
         "phone": phone,
         "role": role,
+    }
+
+
+@app.get("/debug/test-auth")
+def test_auth(current_user=Depends(require_manager)):
+    """Test auth middleware"""
+    return {
+        "message": "Auth working!",
+        "user_id": str(current_user.id),
+        "phone": current_user.phone,
+        "role": current_user.role.value,
+        "fleet_id": str(current_user.fleet_id) if current_user.fleet_id else None,
     }
 
 
