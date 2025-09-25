@@ -39,27 +39,18 @@ class Route(Base):
     __tablename__ = "routes"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    fleet_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("fleets.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Route Information
-    route_code = Column(String(20), nullable=False, index=True)
-    route_name = Column(String(255), nullable=False)
-    origin_name = Column(String(255), nullable=False)
-    destination_name = Column(String(255), nullable=False)
+    name = Column(String(255), nullable=False)
+    origin = Column(String(255), nullable=False)
+    destination = Column(String(255), nullable=False)
 
     # Route Details
     distance_km = Column(Numeric(8, 2), nullable=True)
     estimated_duration_minutes = Column(Integer, nullable=True)
     base_fare = Column(Numeric(10, 2), nullable=False)
 
-    # Optional route data
-    waypoints = Column(Text, nullable=True)  # JSON string of waypoints
-    description = Column(Text, nullable=True)
+
 
     # Status
     is_active = Column(Boolean, default=True, nullable=False)
@@ -79,16 +70,12 @@ class Route(Base):
     def to_dict(self):
         return {
             "id": str(self.id),
-            "fleet_id": str(self.fleet_id),
-            "route_code": self.route_code,
-            "route_name": self.route_name,
-            "origin_name": self.origin_name,
-            "destination_name": self.destination_name,
+            "name": self.name,
+            "origin": self.origin,
+            "destination": self.destination,
             "distance_km": float(self.distance_km) if self.distance_km else None,
             "estimated_duration_minutes": self.estimated_duration_minutes,
             "base_fare": float(self.base_fare),
-            "waypoints": self.waypoints,
-            "description": self.description,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -121,23 +108,8 @@ class Trip(Base):
         nullable=False,
         index=True,
     )
-    assignment_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("vehicle_assignments.id", ondelete="SET NULL"),
-        nullable=True,
-    )
-    fleet_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("fleets.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    created_by = Column(
-        UUID(as_uuid=True), ForeignKey("user_profiles.id"), nullable=False
-    )
 
-    # Trip Code
-    trip_code = Column(String(50), nullable=False, unique=True, index=True)
+
 
     # Schedule Information
     scheduled_departure = Column(DateTime(timezone=True), nullable=False, index=True)
@@ -149,14 +121,10 @@ class Trip(Base):
     fare = Column(Numeric(10, 2), nullable=False)
     total_seats = Column(Integer, nullable=False)
     available_seats = Column(Integer, nullable=False)
-    booked_seats = Column(Integer, default=0, nullable=False)
-
-    # Status and Notes
+    # Status
     status = Column(
         String(20), nullable=False, default=TripStatus.SCHEDULED.value, index=True
     )
-    notes = Column(Text, nullable=True)
-    cancellation_reason = Column(Text, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -197,9 +165,8 @@ class Trip(Base):
             "route_id": str(self.route_id),
             "vehicle_id": str(self.vehicle_id),
             "driver_id": str(self.driver_id),
-            "assignment_id": str(self.assignment_id) if self.assignment_id else None,
-            "fleet_id": str(self.fleet_id),
-            "trip_code": self.trip_code,
+
+
             "scheduled_departure": (
                 self.scheduled_departure.isoformat()
                 if self.scheduled_departure
@@ -217,11 +184,7 @@ class Trip(Base):
             "fare": float(self.fare),
             "total_seats": self.total_seats,
             "available_seats": self.available_seats,
-            "booked_seats": self.booked_seats,
             "status": self.status,
-            "notes": self.notes,
-            "cancellation_reason": self.cancellation_reason,
-            "created_by": str(self.created_by),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

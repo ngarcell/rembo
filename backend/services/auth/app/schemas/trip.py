@@ -103,7 +103,6 @@ class TripCreateRequest(BaseModel):
         None, description="Scheduled arrival datetime"
     )
     fare: Decimal = Field(..., ge=0, description="Trip fare amount")
-    notes: Optional[str] = Field(None, max_length=500, description="Trip notes")
 
     @field_validator("scheduled_arrival")
     @classmethod
@@ -139,11 +138,7 @@ class TripUpdateRequest(BaseModel):
         None, description="New scheduled arrival"
     )
     fare: Optional[Decimal] = Field(None, ge=0, description="New fare amount")
-    notes: Optional[str] = Field(None, max_length=500, description="Updated notes")
     status: Optional[TripStatusEnum] = Field(None, description="Trip status")
-    cancellation_reason: Optional[str] = Field(
-        None, max_length=500, description="Reason for cancellation"
-    )
 
 
 class TripResponse(BaseModel):
@@ -151,17 +146,8 @@ class TripResponse(BaseModel):
 
     id: str
     route_id: str
-    route_name: str
-    route_code: str
-    origin_name: str
-    destination_name: str
     vehicle_id: str
-    vehicle_info: str  # "KCS-001 (KCA123A)"
     driver_id: str
-    driver_name: str
-    assignment_id: Optional[str]
-    fleet_id: str
-    trip_code: str
     scheduled_departure: str
     scheduled_arrival: Optional[str]
     actual_departure: Optional[str]
@@ -169,11 +155,7 @@ class TripResponse(BaseModel):
     fare: float
     total_seats: int
     available_seats: int
-    booked_seats: int
     status: str
-    notes: Optional[str]
-    cancellation_reason: Optional[str]
-    created_by: str
     created_at: str
     updated_at: str
 

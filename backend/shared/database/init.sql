@@ -278,8 +278,7 @@ CREATE INDEX idx_user_profiles_phone ON user_profiles(phone);
 CREATE INDEX idx_vehicles_fleet_id ON vehicles(fleet_id);
 CREATE INDEX idx_vehicles_license_plate ON vehicles(license_plate);
 CREATE INDEX idx_drivers_fleet_id ON drivers(fleet_id);
-CREATE INDEX idx_vehicle_assignments_vehicle_id ON vehicle_assignments(vehicle_id);
-CREATE INDEX idx_vehicle_assignments_driver_id ON vehicle_assignments(driver_id);
+-- Indexes already created above for vehicle_assignments
 CREATE INDEX idx_trips_vehicle_date ON trips(vehicle_id, scheduled_departure);
 CREATE INDEX idx_trips_route_status_date ON trips(route_id, status, scheduled_departure);
 CREATE INDEX idx_bookings_passenger ON bookings(passenger_id);
@@ -605,3 +604,124 @@ CREATE INDEX idx_trip_templates_days_of_week ON trip_templates USING GIN(days_of
 CREATE TRIGGER update_routes_updated_at BEFORE UPDATE ON routes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_trips_updated_at BEFORE UPDATE ON trips FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_trip_templates_updated_at BEFORE UPDATE ON trip_templates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =============================================
+-- ENHANCED BOOKING SYSTEM (Story 3.2)
+-- =============================================
+
+-- Drop existing basic booking tables to replace with enhanced versions
+DROP TABLE IF EXISTS receipts CASCADE;
+DROP TABLE IF EXISTS payments CASCADE;
+DROP TABLE IF EXISTS bookings CASCADE;
+
+-- Create enhanced booking status enum (replacing existing)
+DROP TYPE IF EXISTS booking_status CASCADE;
+CREATE TYPE booking_status AS ENUM ('pending', 'confirmed', 'cancelled', 'completed', 'no_show');
+
+-- Create enhanced payment status enum (replacing existing)
+DROP TYPE IF EXISTS payment_status CASCADE;
+CREATE TYPE payment_status AS ENUM ('pending', 'processing', 'completed', 'failed', 'refunded');
+
+-- Create payment method enum
+CREATE TYPE payment_method AS ENUM ('mpesa', 'card', 'cash', 'bank_transfer');
+
+-- Create seat preference enum
+CREATE TYPE seat_preference AS ENUM ('window', 'aisle', 'front', 'back', 'any');
+
+-- Passengers table for booking system
+CREATE TABLE passengers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES user_profiles(id), -- Optional for registered users
+
+    -- Personal Information
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(15) UNIQUE NOT NULL,
+    email VARCHAR(255),
+    date_of_birth DATE,
+    national_id VARCHAR(50),
+
+    -- Preferences
+    preferred_seat_type seat_preference DEFAULT 'any',
+    loyalty_points INTEGER DEFAULT 0,
+
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enhanced bookings table for trip reservations
+CREATE TABLE bookings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    passenger_id UUID NOT NULL REFERENCES passengers(id) ON DELETE CASCADE,
+    booking_reference VARCHAR(20) UNIQUE NOT NULL, -- BKG-XXXXXXXX format
+
+    -- Booking Details
+    seats_booked INTEGER NOT NULL CHECK (seats_booked > 0),
+    seat_numbers TEXT[], -- Array of seat numbers
+    total_fare DECIMAL(10,2) NOT NULL CHECK (total_fare > 0),
+    booking_status booking_status NOT NULL DEFAULT 'pending',
+
+    -- Payment Details
+    payment_method payment_method,
+    payment_status payment_status NOT NULL DEFAULT 'pending',
+    amount_paid DECIMAL(10,2) DEFAULT 0.00 CHECK (amount_paid >= 0),
+    amount_due DECIMAL(10,2) NOT NULL CHECK (amount_due >= 0),
+
+    -- Passenger Details (denormalized for quick access)
+    passenger_name VARCHAR(200) NOT NULL,
+    passenger_phone VARCHAR(15) NOT NULL,
+    passenger_email VARCHAR(255),
+    emergency_contact VARCHAR(15),
+
+    -- Timestamps
+    booking_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    payment_deadline TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Constraints
+    CONSTRAINT seat_numbers_match_count CHECK (array_length(seat_numbers, 1) = seats_booked)
+);
+
+-- Enhanced payments table for booking transactions
+CREATE TABLE payments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
+
+    -- Payment Details
+    payment_reference VARCHAR(50) UNIQUE NOT NULL,
+    payment_method payment_method NOT NULL,
+    amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
+    currency VARCHAR(3) DEFAULT 'KES',
+
+    -- Payment Gateway Details
+    gateway_transaction_id VARCHAR(100),
+    gateway_response TEXT,
+
+    -- Status
+    payment_status payment_status NOT NULL DEFAULT 'pending',
+    processed_at TIMESTAMP WITH TIME ZONE,
+
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for enhanced booking system
+CREATE INDEX idx_passengers_phone ON passengers(phone);
+CREATE INDEX idx_passengers_user_id ON passengers(user_id);
+CREATE INDEX idx_bookings_trip_id ON bookings(trip_id);
+CREATE INDEX idx_bookings_passenger_id ON bookings(passenger_id);
+CREATE INDEX idx_bookings_reference ON bookings(booking_reference);
+CREATE INDEX idx_bookings_status ON bookings(booking_status);
+CREATE INDEX idx_bookings_phone ON bookings(passenger_phone);
+CREATE INDEX idx_payments_booking_id ON payments(booking_id);
+CREATE INDEX idx_payments_reference ON payments(payment_reference);
+CREATE INDEX idx_payments_status ON payments(payment_status);
+
+-- Add updated_at triggers for booking system tables
+CREATE TRIGGER update_passengers_updated_at BEFORE UPDATE ON passengers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON bookings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON payments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -20,3 +20,12 @@ from .trip import (
     TripTemplate,
     TripStatus,
 )
+from .booking import (
+    Booking,
+    Passenger,
+    Payment,
+    BookingStatus,
+    PaymentStatus,
+    PaymentMethod,
+    SeatPreference,
+)
