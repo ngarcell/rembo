@@ -145,14 +145,6 @@ class Trip(Base):
             "available_seats <= total_seats AND available_seats >= 0",
             name="valid_seat_count",
         ),
-        CheckConstraint(
-            "booked_seats >= 0 AND booked_seats <= total_seats",
-            name="valid_booked_seats",
-        ),
-        CheckConstraint(
-            "available_seats + booked_seats = total_seats",
-            name="seat_count_consistency",
-        ),
     )
 
     def to_dict(self):
