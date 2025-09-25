@@ -165,9 +165,7 @@ class DriverIDService:
             logger.error(f"Error getting next driver number: {e}")
             # Fallback: count all drivers + 1
             count = (
-                db.query(DriverProfile)
-                .filter(DriverProfile.fleet_id == fleet_id)
-                .count()
+                db.query(SimpleDriver).filter(SimpleDriver.fleet_id == fleet_id).count()
             )
             return min(count + 1, 999)
 

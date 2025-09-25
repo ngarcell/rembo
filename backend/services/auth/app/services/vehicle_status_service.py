@@ -338,7 +338,7 @@ class VehicleStatusService:
             # Build query
             query = (
                 db.query(MaintenanceRecord)
-                .join(Vehicle)
+                .join(SimpleVehicle)
                 .filter(
                     and_(
                         SimpleVehicle.fleet_id == fleet_id,
