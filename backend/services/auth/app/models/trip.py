@@ -50,8 +50,6 @@ class Route(Base):
     estimated_duration_minutes = Column(Integer, nullable=True)
     base_fare = Column(Numeric(10, 2), nullable=False)
 
-
-
     # Status
     is_active = Column(Boolean, default=True, nullable=False)
 
@@ -109,8 +107,6 @@ class Trip(Base):
         index=True,
     )
 
-
-
     # Schedule Information
     scheduled_departure = Column(DateTime(timezone=True), nullable=False, index=True)
     scheduled_arrival = Column(DateTime(timezone=True), nullable=True)
@@ -165,8 +161,6 @@ class Trip(Base):
             "route_id": str(self.route_id),
             "vehicle_id": str(self.vehicle_id),
             "driver_id": str(self.driver_id),
-
-
             "scheduled_departure": (
                 self.scheduled_departure.isoformat()
                 if self.scheduled_departure

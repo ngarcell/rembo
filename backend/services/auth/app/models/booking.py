@@ -86,7 +86,9 @@ class Passenger(Base):
     national_id = Column(String(50), nullable=True)
 
     # Preferences
-    preferred_seat_type = Column(String(20), default="ANY", nullable=False)  # Use uppercase to match database enum
+    preferred_seat_type = Column(
+        String(20), default="ANY", nullable=False
+    )  # Use uppercase to match database enum
     loyalty_points = Column(Integer, default=0, nullable=False)
 
     # Timestamps
@@ -111,7 +113,9 @@ class Passenger(Base):
             "last_name": self.last_name,
             "phone": self.phone,
             "email": self.email,
-            "date_of_birth": self.date_of_birth.isoformat() if self.date_of_birth else None,
+            "date_of_birth": (
+                self.date_of_birth.isoformat() if self.date_of_birth else None
+            ),
             "national_id": self.national_id,
             "preferred_seat_type": self.preferred_seat_type,
             "loyalty_points": self.loyalty_points,
@@ -140,11 +144,17 @@ class Booking(Base):
     seats_booked = Column(Integer, nullable=False)
     seat_numbers = Column(ARRAY(String), nullable=False)
     total_fare = Column(DECIMAL(10, 2), nullable=False)
-    booking_status = Column(String(20), default="PENDING", nullable=False)  # Use uppercase to match database enum
+    booking_status = Column(
+        String(20), default="PENDING", nullable=False
+    )  # Use uppercase to match database enum
 
     # Payment Details
-    payment_method = Column(String(20), nullable=True)  # Temporarily use string instead of enum
-    payment_status = Column(String(20), default="PENDING", nullable=False)  # Use uppercase to match database enum
+    payment_method = Column(
+        String(20), nullable=True
+    )  # Temporarily use string instead of enum
+    payment_status = Column(
+        String(20), default="PENDING", nullable=False
+    )  # Use uppercase to match database enum
     amount_paid = Column(DECIMAL(10, 2), default=0.00, nullable=False)
     amount_due = Column(DECIMAL(10, 2), nullable=False)
 
@@ -177,7 +187,9 @@ class Booking(Base):
     # Relationships
     trip = relationship("Trip", foreign_keys=[trip_id])
     passenger = relationship("Passenger", back_populates="bookings")
-    payments = relationship("Payment", back_populates="booking", cascade="all, delete-orphan")
+    payments = relationship(
+        "Payment", back_populates="booking", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Booking(id={self.id}, reference='{self.booking_reference}')>"
@@ -201,7 +213,9 @@ class Booking(Base):
             "passenger_phone": self.passenger_phone,
             "passenger_email": self.passenger_email,
             "emergency_contact": self.emergency_contact,
-            "booking_date": self.booking_date.isoformat() if self.booking_date else None,
+            "booking_date": (
+                self.booking_date.isoformat() if self.booking_date else None
+            ),
             "payment_deadline": (
                 self.payment_deadline.isoformat() if self.payment_deadline else None
             ),
@@ -265,7 +279,9 @@ class Payment(Base):
             "gateway_transaction_id": self.gateway_transaction_id,
             "gateway_response": self.gateway_response,
             "payment_status": self.payment_status.value,
-            "processed_at": self.processed_at.isoformat() if self.processed_at else None,
+            "processed_at": (
+                self.processed_at.isoformat() if self.processed_at else None
+            ),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

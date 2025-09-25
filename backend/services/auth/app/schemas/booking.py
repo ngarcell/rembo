@@ -190,7 +190,9 @@ class SeatAvailabilityResponse(BaseModel):
     total_seats: int
     available_seats: int
     booked_seats: int
-    seat_map: Dict[str, str]  # seat_number -> status ('available', 'booked', 'reserved')
+    seat_map: Dict[
+        str, str
+    ]  # seat_number -> status ('available', 'booked', 'reserved')
     fare: float
     route_name: str
     departure_time: str

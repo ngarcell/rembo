@@ -36,6 +36,4 @@ api_router.include_router(
 api_router.include_router(
     trip.router, prefix="/manager/trips", tags=["trip-management"]
 )
-api_router.include_router(
-    booking.router, prefix="/passenger", tags=["booking-system"]
-)
+api_router.include_router(booking.router, prefix="/passenger", tags=["booking-system"])

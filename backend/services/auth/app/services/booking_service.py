@@ -32,18 +32,24 @@ class BookingService:
     def generate_booking_reference() -> str:
         """Generate unique booking reference"""
         # Generate BKG-XXXXXXXX format
-        random_part = "".join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+        random_part = "".join(
+            secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8)
+        )
         return f"BKG-{random_part}"
 
     @staticmethod
     def generate_payment_reference() -> str:
         """Generate unique payment reference"""
         # Generate PAY-XXXXXXXX format
-        random_part = "".join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+        random_part = "".join(
+            secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8)
+        )
         return f"PAY-{random_part}"
 
     @staticmethod
-    def search_trips(request: TripSearchRequest, db: Session) -> Tuple[bool, Dict[str, Any]]:
+    def search_trips(
+        request: TripSearchRequest, db: Session
+    ) -> Tuple[bool, Dict[str, Any]]:
         """Search for available trips"""
         try:
             # Build query
@@ -54,11 +60,17 @@ class BookingService:
                 query = query.filter(Route.origin.ilike(f"%{request.origin}%"))
 
             if request.destination:
-                query = query.filter(Route.destination.ilike(f"%{request.destination}%"))
+                query = query.filter(
+                    Route.destination.ilike(f"%{request.destination}%")
+                )
 
             if request.departure_date:
-                start_of_day = datetime.combine(request.departure_date, datetime.min.time())
-                end_of_day = datetime.combine(request.departure_date, datetime.max.time())
+                start_of_day = datetime.combine(
+                    request.departure_date, datetime.min.time()
+                )
+                end_of_day = datetime.combine(
+                    request.departure_date, datetime.max.time()
+                )
                 query = query.filter(
                     and_(
                         Trip.scheduled_departure >= start_of_day,
@@ -100,23 +112,37 @@ class BookingService:
             trips_data = []
             for trip in trips:
                 route = db.query(Route).filter(Route.id == trip.route_id).first()
-                vehicle = db.query(SimpleVehicle).filter(SimpleVehicle.id == trip.vehicle_id).first()
+                vehicle = (
+                    db.query(SimpleVehicle)
+                    .filter(SimpleVehicle.id == trip.vehicle_id)
+                    .first()
+                )
 
-                trips_data.append({
-                    "id": str(trip.id),
-                    "route_id": str(trip.route_id),
-                    "route_name": route.name if route else "Unknown Route",
-                    "origin_name": route.origin if route else "Unknown",
-                    "destination_name": route.destination if route else "Unknown",
-                    "vehicle_info": f"{vehicle.fleet_number} ({vehicle.license_plate})" if vehicle else "Unknown Vehicle",
-                    "driver_name": "Driver Available",  # Simplified for now
-                    "scheduled_departure": trip.scheduled_departure.isoformat(),
-                    "scheduled_arrival": trip.scheduled_arrival.isoformat() if trip.scheduled_arrival else None,
-                    "fare": float(trip.fare),
-                    "total_seats": trip.total_seats,
-                    "available_seats": trip.available_seats,
-                    "status": trip.status,
-                })
+                trips_data.append(
+                    {
+                        "id": str(trip.id),
+                        "route_id": str(trip.route_id),
+                        "route_name": route.name if route else "Unknown Route",
+                        "origin_name": route.origin if route else "Unknown",
+                        "destination_name": route.destination if route else "Unknown",
+                        "vehicle_info": (
+                            f"{vehicle.fleet_number} ({vehicle.license_plate})"
+                            if vehicle
+                            else "Unknown Vehicle"
+                        ),
+                        "driver_name": "Driver Available",  # Simplified for now
+                        "scheduled_departure": trip.scheduled_departure.isoformat(),
+                        "scheduled_arrival": (
+                            trip.scheduled_arrival.isoformat()
+                            if trip.scheduled_arrival
+                            else None
+                        ),
+                        "fare": float(trip.fare),
+                        "total_seats": trip.total_seats,
+                        "available_seats": trip.available_seats,
+                        "status": trip.status,
+                    }
+                )
 
             total_pages = (total_count + request.limit - 1) // request.limit
 
@@ -145,12 +171,16 @@ class BookingService:
             route = db.query(Route).filter(Route.id == trip.route_id).first()
 
             # Get all bookings for this trip
-            bookings = db.query(Booking).filter(
-                and_(
-                    Booking.trip_id == trip_id,
-                    Booking.booking_status.in_(["CONFIRMED", "PENDING"])
+            bookings = (
+                db.query(Booking)
+                .filter(
+                    and_(
+                        Booking.trip_id == trip_id,
+                        Booking.booking_status.in_(["CONFIRMED", "PENDING"]),
+                    )
                 )
-            ).all()
+                .all()
+            )
 
             # Build seat map
             seat_map = {}
@@ -159,7 +189,11 @@ class BookingService:
             for booking in bookings:
                 for seat_number in booking.seat_numbers:
                     booked_seats.add(seat_number)
-                    seat_map[seat_number] = "booked" if booking.booking_status == "confirmed" else "reserved"
+                    seat_map[seat_number] = (
+                        "booked"
+                        if booking.booking_status == "confirmed"
+                        else "reserved"
+                    )
 
             # Generate available seats (simplified - assuming seats are numbered 1 to total_seats)
             for seat_num in range(1, trip.total_seats + 1):
@@ -176,7 +210,11 @@ class BookingService:
                 "fare": float(trip.fare),
                 "route_name": route.name if route else "Unknown Route",
                 "departure_time": trip.scheduled_departure.isoformat(),
-                "arrival_time": trip.scheduled_arrival.isoformat() if trip.scheduled_arrival else None,
+                "arrival_time": (
+                    trip.scheduled_arrival.isoformat()
+                    if trip.scheduled_arrival
+                    else None
+                ),
             }
 
         except Exception as e:
@@ -184,16 +222,26 @@ class BookingService:
             return False, {"error": f"Failed to get seat availability: {str(e)}"}
 
     @staticmethod
-    def create_or_get_passenger(request: BookingCreateRequest, db: Session) -> Tuple[bool, Any, Optional[str]]:
+    def create_or_get_passenger(
+        request: BookingCreateRequest, db: Session
+    ) -> Tuple[bool, Any, Optional[str]]:
         """Create or get existing passenger"""
         try:
             # Check if passenger exists by phone
-            existing_passenger = db.query(Passenger).filter(Passenger.phone == request.passenger_phone).first()
+            existing_passenger = (
+                db.query(Passenger)
+                .filter(Passenger.phone == request.passenger_phone)
+                .first()
+            )
 
             if existing_passenger:
                 # Update passenger details if needed
                 existing_passenger.first_name = request.passenger_name.split()[0]
-                existing_passenger.last_name = " ".join(request.passenger_name.split()[1:]) if len(request.passenger_name.split()) > 1 else ""
+                existing_passenger.last_name = (
+                    " ".join(request.passenger_name.split()[1:])
+                    if len(request.passenger_name.split()) > 1
+                    else ""
+                )
                 existing_passenger.email = request.passenger_email
                 db.commit()
                 return True, existing_passenger, None
@@ -223,7 +271,9 @@ class BookingService:
             return False, None, f"Failed to create/get passenger: {str(e)}"
 
     @staticmethod
-    def create_booking(request: BookingCreateRequest, db: Session) -> Tuple[bool, Dict[str, Any]]:
+    def create_booking(
+        request: BookingCreateRequest, db: Session
+    ) -> Tuple[bool, Dict[str, Any]]:
         """Create a new booking"""
         try:
             # Validate trip exists and has availability
@@ -235,7 +285,9 @@ class BookingService:
                 return False, {"error": "Not enough seats available"}
 
             # Check if requested seats are available
-            success, availability_result = BookingService.get_seat_availability(request.trip_id, db)
+            success, availability_result = BookingService.get_seat_availability(
+                request.trip_id, db
+            )
             if not success:
                 return False, {"error": "Failed to check seat availability"}
 
@@ -245,7 +297,9 @@ class BookingService:
                     return False, {"error": f"Seat {seat_number} is not available"}
 
             # Create or get passenger
-            success, passenger, error = BookingService.create_or_get_passenger(request, db)
+            success, passenger, error = BookingService.create_or_get_passenger(
+                request, db
+            )
             if not success:
                 return False, {"error": error}
 
@@ -263,13 +317,18 @@ class BookingService:
                 seats_booked=request.seats_booked,
                 seat_numbers=request.seat_numbers,
                 total_fare=total_fare,
-                payment_method=request.payment_method.value if hasattr(request.payment_method, 'value') else str(request.payment_method),
+                payment_method=(
+                    request.payment_method.value
+                    if hasattr(request.payment_method, "value")
+                    else str(request.payment_method)
+                ),
                 amount_due=total_fare,
                 passenger_name=request.passenger_name,
                 passenger_phone=request.passenger_phone,
                 passenger_email=request.passenger_email,
                 emergency_contact=request.emergency_contact,
-                payment_deadline=datetime.utcnow() + timedelta(hours=24),  # 24 hour payment deadline
+                payment_deadline=datetime.utcnow()
+                + timedelta(hours=24),  # 24 hour payment deadline
             )
 
             db.add(booking)
@@ -297,11 +356,15 @@ class BookingService:
             return False, {"error": f"Failed to create booking: {str(e)}"}
 
     @staticmethod
-    def get_bookings(passenger_phone: str, page: int = 1, limit: int = 20, db: Session = None) -> Tuple[bool, Dict[str, Any]]:
+    def get_bookings(
+        passenger_phone: str, page: int = 1, limit: int = 20, db: Session = None
+    ) -> Tuple[bool, Dict[str, Any]]:
         """Get bookings for a passenger"""
         try:
             # Get passenger
-            passenger = db.query(Passenger).filter(Passenger.phone == passenger_phone).first()
+            passenger = (
+                db.query(Passenger).filter(Passenger.phone == passenger_phone).first()
+            )
             if not passenger:
                 return True, {
                     "bookings": [],

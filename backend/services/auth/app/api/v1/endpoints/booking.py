@@ -32,8 +32,12 @@ router = APIRouter()
 @router.get("/trips/search", response_model=TripSearchListResponse)
 def search_trips(
     origin: Optional[str] = Query(None, description="Origin city or location"),
-    destination: Optional[str] = Query(None, description="Destination city or location"),
-    departure_date: Optional[str] = Query(None, description="Departure date (YYYY-MM-DD)"),
+    destination: Optional[str] = Query(
+        None, description="Destination city or location"
+    ),
+    departure_date: Optional[str] = Query(
+        None, description="Departure date (YYYY-MM-DD)"
+    ),
     min_fare: Optional[float] = Query(None, ge=0, description="Minimum fare"),
     max_fare: Optional[float] = Query(None, ge=0, description="Maximum fare"),
     min_seats: Optional[int] = Query(None, ge=1, description="Minimum available seats"),
@@ -47,6 +51,7 @@ def search_trips(
         departure_date_obj = None
         if departure_date:
             from datetime import datetime
+
             departure_date_obj = datetime.strptime(departure_date, "%Y-%m-%d").date()
 
         # Create search request
@@ -210,6 +215,7 @@ def update_booking(
 
         # Get trip to check departure time
         from app.models.trip import Trip
+
         trip = db.query(Trip).filter(Trip.id == booking.trip_id).first()
         if trip and trip.scheduled_departure <= datetime.utcnow():
             raise HTTPException(

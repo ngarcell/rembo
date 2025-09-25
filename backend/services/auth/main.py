@@ -184,7 +184,7 @@ def create_test_data():
                 id=uuid.uuid4(),
                 name="Test Fleet",
                 description="Test fleet for development",
-                is_active=True
+                is_active=True,
             )
             db.add(fleet)
             db.flush()  # Get the ID
@@ -198,7 +198,7 @@ def create_test_data():
             distance_km=350.0,
             estimated_duration_minutes=420,
             base_fare=1500.00,
-            is_active=True
+            is_active=True,
         )
         db.add(route)
         db.flush()  # Get the ID
@@ -209,7 +209,7 @@ def create_test_data():
             driver_code="DRV-001",
             license_number="DL123456789",
             fleet_id=fleet.id,
-            is_active=True
+            is_active=True,
         )
         db.add(driver)
         db.flush()  # Get the ID
@@ -222,7 +222,7 @@ def create_test_data():
             license_plate="KCA123A",
             capacity=14,
             vehicle_model="Toyota Hiace",
-            status="active"
+            status="active",
         )
         db.add(vehicle)
         db.flush()  # Get the ID
@@ -241,7 +241,7 @@ def create_test_data():
             fare=1500.00,
             total_seats=14,
             available_seats=14,
-            status="scheduled"
+            status="scheduled",
         )
         db.add(trip)
 
@@ -254,15 +254,12 @@ def create_test_data():
             "driver_id": str(driver.id),
             "route_id": str(route.id),
             "vehicle_id": str(vehicle.id),
-            "trip_id": str(trip.id)
+            "trip_id": str(trip.id),
         }
 
     except Exception as e:
         db.rollback()
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
     finally:
         db.close()
 
