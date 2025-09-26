@@ -56,7 +56,23 @@ class AuthMiddleware:
                 )
 
             # Get user from database
-            user = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+            try:
+                # Use string comparison to avoid UUID casting issues
+                from sqlalchemy import text
+
+                user = (
+                    db.query(UserProfile)
+                    .filter(text("user_id::text = :user_id"))
+                    .params(user_id=user_id)
+                    .first()
+                )
+            except Exception as e:
+                logger.error(f"Database query error: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Could not validate credentials",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
 
             if not user:
                 raise HTTPException(

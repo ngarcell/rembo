@@ -18,6 +18,10 @@ from app.schemas.vehicle_status import (
     MaintenanceRecordRequest,
     MaintenanceRecordResponse,
     MaintenanceListResponse,
+    VehicleDocumentRequest,
+    VehicleDocumentResponse,
+    DocumentListResponse,
+    FleetStatusDashboard,
     VehicleStatusEnum,
     MaintenancePriorityEnum,
 )
@@ -309,4 +313,203 @@ def list_maintenance_records(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve maintenance records",
+        )
+
+
+@router.post(
+    "/vehicles/{vehicle_id}/documents",
+    response_model=dict,
+    summary="Create vehicle document",
+    description="Create a new document record for a vehicle",
+)
+def create_vehicle_document(
+    vehicle_id: UUID,
+    request: VehicleDocumentRequest,
+    db: Session = Depends(get_db),
+    manager: UserProfile = Depends(require_manager),
+):
+    """
+    Create vehicle document (Manager only)
+
+    Args:
+        vehicle_id: Vehicle UUID
+        request: Document creation request
+        db: Database session
+        manager: Current manager user
+
+    Returns:
+        Document creation result
+    """
+    try:
+        # Convert request to dict
+        document_data = {
+            "document_type": request.document_type,
+            "document_number": request.document_number,
+            "issuer": request.issuer,
+            "issued_date": request.issued_date,
+            "expiry_date": request.expiry_date,
+            "notes": request.notes,
+        }
+
+        success, response_data = vehicle_status_service.create_vehicle_document(
+            vehicle_id=str(vehicle_id),
+            manager_id=str(manager.id),
+            document_data=document_data,
+            db=db,
+        )
+
+        if not success:
+            error_code = response_data.get("error_code", "UNKNOWN_ERROR")
+
+            if error_code == "VEHICLE_NOT_FOUND":
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=response_data["message"],
+                )
+            elif error_code == "ACCESS_DENIED":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=response_data["message"],
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=response_data["message"],
+                )
+
+        return {
+            "success": True,
+            "message": response_data["message"],
+            "document": response_data["document"],
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Create document error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Document creation failed",
+        )
+
+
+@router.get(
+    "/vehicles/{vehicle_id}/documents",
+    response_model=DocumentListResponse,
+    summary="Get vehicle documents",
+    description="Get all documents for a vehicle",
+)
+def get_vehicle_documents(
+    vehicle_id: UUID,
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    db: Session = Depends(get_db),
+    manager: UserProfile = Depends(require_manager),
+):
+    """
+    Get vehicle documents
+
+    Args:
+        vehicle_id: Vehicle UUID
+        page: Page number (1-based)
+        limit: Items per page
+        db: Database session
+        manager: Current manager user
+
+    Returns:
+        DocumentListResponse: Paginated documents
+    """
+    try:
+        success, response_data = vehicle_status_service.get_vehicle_documents(
+            vehicle_id=str(vehicle_id),
+            manager_id=str(manager.id),
+            page=page,
+            limit=limit,
+            db=db,
+        )
+
+        if not success:
+            error_code = response_data.get("error_code", "UNKNOWN_ERROR")
+
+            if error_code == "VEHICLE_NOT_FOUND":
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=response_data["message"],
+                )
+            elif error_code == "ACCESS_DENIED":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=response_data["message"],
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=response_data["message"],
+                )
+
+        return DocumentListResponse(**response_data)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get documents error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve documents",
+        )
+
+
+@router.get(
+    "/fleet/status-dashboard",
+    response_model=dict,
+    summary="Get fleet status dashboard",
+    description="Get fleet status overview and summary statistics",
+)
+def get_fleet_status_dashboard(
+    db: Session = Depends(get_db),
+    manager: UserProfile = Depends(require_manager),
+):
+    """
+    Get fleet status dashboard
+
+    Args:
+        db: Database session
+        manager: Current manager user
+
+    Returns:
+        Fleet status dashboard data
+    """
+    try:
+        success, response_data = vehicle_status_service.get_fleet_status_dashboard(
+            manager_id=str(manager.id),
+            fleet_id=str(manager.fleet_id),
+            db=db,
+        )
+
+        if not success:
+            error_code = response_data.get("error_code", "UNKNOWN_ERROR")
+
+            if error_code == "ACCESS_DENIED":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=response_data["message"],
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=response_data["message"],
+                )
+
+        return {
+            "success": True,
+            "dashboard": response_data,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get dashboard error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve fleet dashboard",
         )
