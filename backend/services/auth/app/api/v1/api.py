@@ -42,4 +42,6 @@ api_router.include_router(
 )
 api_router.include_router(trip_status.router, prefix="/manager", tags=["trip-status"])
 api_router.include_router(booking.router, prefix="/passenger", tags=["booking-system"])
-api_router.include_router(payments.router, prefix="/payments", tags=["payment-processing"])
+api_router.include_router(
+    payments.router, prefix="/payments", tags=["payment-processing"]
+)

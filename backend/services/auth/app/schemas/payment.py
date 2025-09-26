@@ -11,6 +11,7 @@ from enum import Enum
 
 class PaymentMethodEnum(str, Enum):
     """Payment method enumeration"""
+
     MPESA = "mpesa"
     CARD = "card"
     CASH = "cash"
@@ -19,6 +20,7 @@ class PaymentMethodEnum(str, Enum):
 
 class PaymentStatusEnum(str, Enum):
     """Payment status enumeration"""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -30,6 +32,7 @@ class PaymentStatusEnum(str, Enum):
 
 class RefundStatusEnum(str, Enum):
     """Refund status enumeration"""
+
     PENDING = "pending"
     APPROVED = "approved"
     PROCESSING = "processing"
@@ -40,6 +43,7 @@ class RefundStatusEnum(str, Enum):
 
 class RefundReasonEnum(str, Enum):
     """Refund reason enumeration"""
+
     TRIP_CANCELLED_BY_OPERATOR = "trip_cancelled_by_operator"
     VEHICLE_BREAKDOWN = "vehicle_breakdown"
     WEATHER_CONDITIONS = "weather_conditions"
@@ -52,26 +56,28 @@ class RefundReasonEnum(str, Enum):
 # Request Schemas
 class PaymentInitiateRequest(BaseModel):
     """Request schema for initiating M-Pesa payment"""
-    
+
     booking_id: str = Field(..., description="Booking ID to pay for")
     phone_number: str = Field(..., description="Phone number for M-Pesa payment")
-    amount: Decimal = Field(..., gt=0, max_digits=10, decimal_places=2, description="Payment amount")
-    
+    amount: Decimal = Field(
+        ..., gt=0, max_digits=10, decimal_places=2, description="Payment amount"
+    )
+
     @validator("phone_number")
     def validate_phone_number(cls, v):
         # Remove spaces and special characters
         phone = "".join(filter(str.isdigit, v.replace("+", "")))
-        
+
         # Validate length and format
         if len(phone) < 9 or len(phone) > 15:
             raise ValueError("Invalid phone number length")
-        
+
         # Ensure it's a valid Kenyan number for M-Pesa
         if not (phone.startswith("254") or phone.startswith("0")):
             raise ValueError("Phone number must be a valid Kenyan number")
-        
+
         return phone
-    
+
     @validator("amount")
     def validate_amount(cls, v):
         if v <= 0:
@@ -83,26 +89,38 @@ class PaymentInitiateRequest(BaseModel):
 
 class PaymentStatusRequest(BaseModel):
     """Request schema for checking payment status"""
-    
+
     payment_id: Optional[str] = Field(None, description="Payment ID")
-    checkout_request_id: Optional[str] = Field(None, description="M-Pesa checkout request ID")
+    checkout_request_id: Optional[str] = Field(
+        None, description="M-Pesa checkout request ID"
+    )
     payment_reference: Optional[str] = Field(None, description="Payment reference")
-    
+
     @validator("*", pre=True)
     def validate_at_least_one(cls, v, values):
-        if not any([values.get("payment_id"), values.get("checkout_request_id"), values.get("payment_reference")]):
+        if not any(
+            [
+                values.get("payment_id"),
+                values.get("checkout_request_id"),
+                values.get("payment_reference"),
+            ]
+        ):
             raise ValueError("At least one identifier must be provided")
         return v
 
 
 class RefundInitiateRequest(BaseModel):
     """Request schema for initiating refund"""
-    
+
     payment_id: str = Field(..., description="Original payment ID")
-    refund_amount: Decimal = Field(..., gt=0, max_digits=10, decimal_places=2, description="Refund amount")
+    refund_amount: Decimal = Field(
+        ..., gt=0, max_digits=10, decimal_places=2, description="Refund amount"
+    )
     refund_reason: RefundReasonEnum = Field(..., description="Reason for refund")
-    refund_notes: Optional[str] = Field(None, max_length=500, description="Additional notes")
-    
+    refund_notes: Optional[str] = Field(
+        None, max_length=500, description="Additional notes"
+    )
+
     @validator("refund_amount")
     def validate_refund_amount(cls, v):
         if v <= 0:
@@ -113,7 +131,7 @@ class RefundInitiateRequest(BaseModel):
 # Response Schemas
 class PaymentInitiateResponse(BaseModel):
     """Response schema for payment initiation"""
-    
+
     success: bool
     payment_id: str
     checkout_request_id: Optional[str] = None
@@ -125,7 +143,7 @@ class PaymentInitiateResponse(BaseModel):
 
 class PaymentStatusResponse(BaseModel):
     """Response schema for payment status"""
-    
+
     payment_id: str
     booking_id: str
     payment_reference: str
@@ -142,7 +160,7 @@ class PaymentStatusResponse(BaseModel):
 
 class PaymentListResponse(BaseModel):
     """Response schema for payment list"""
-    
+
     payments: List[PaymentStatusResponse]
     total_count: int
     page: int
@@ -153,7 +171,7 @@ class PaymentListResponse(BaseModel):
 
 class RefundStatusResponse(BaseModel):
     """Response schema for refund status"""
-    
+
     refund_id: str
     original_payment_id: str
     booking_id: str
@@ -175,7 +193,7 @@ class RefundStatusResponse(BaseModel):
 
 class PaymentDashboardResponse(BaseModel):
     """Response schema for payment dashboard"""
-    
+
     total_payments: int
     total_amount: Decimal
     successful_payments: int
@@ -190,7 +208,7 @@ class PaymentDashboardResponse(BaseModel):
 
 class PaymentAnalyticsResponse(BaseModel):
     """Response schema for payment analytics"""
-    
+
     period: str
     total_revenue: Decimal
     transaction_count: int
@@ -204,16 +222,16 @@ class PaymentAnalyticsResponse(BaseModel):
 # Webhook Schemas
 class MpesaCallbackRequest(BaseModel):
     """Schema for M-Pesa STK Push callback"""
-    
+
     Body: Dict[str, Any]
-    
+
     class Config:
         extra = "allow"
 
 
 class MpesaCallbackResponse(BaseModel):
     """Response schema for M-Pesa callback"""
-    
+
     ResultCode: int = 0
     ResultDesc: str = "Success"
 
@@ -221,10 +239,12 @@ class MpesaCallbackResponse(BaseModel):
 # Receipt Schemas
 class ReceiptGenerateRequest(BaseModel):
     """Request schema for generating receipt"""
-    
+
     payment_id: str = Field(..., description="Payment ID")
-    delivery_methods: List[str] = Field(default=["email"], description="Delivery methods")
-    
+    delivery_methods: List[str] = Field(
+        default=["email"], description="Delivery methods"
+    )
+
     @validator("delivery_methods")
     def validate_delivery_methods(cls, v):
         valid_methods = ["email", "sms"]
@@ -236,7 +256,7 @@ class ReceiptGenerateRequest(BaseModel):
 
 class ReceiptResponse(BaseModel):
     """Response schema for receipt"""
-    
+
     receipt_id: str
     payment_id: str
     receipt_number: str
@@ -251,13 +271,13 @@ class ReceiptResponse(BaseModel):
 
 class ReceiptVerificationRequest(BaseModel):
     """Request schema for receipt verification"""
-    
+
     qr_code_data: str = Field(..., description="QR code data from receipt")
 
 
 class ReceiptVerificationResponse(BaseModel):
     """Response schema for receipt verification"""
-    
+
     valid: bool
     receipt_id: Optional[str] = None
     payment_id: Optional[str] = None

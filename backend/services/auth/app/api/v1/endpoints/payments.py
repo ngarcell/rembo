@@ -41,7 +41,7 @@ async def initiate_payment(
 ):
     """
     Initiate M-Pesa STK Push payment
-    
+
     - **booking_id**: ID of the booking to pay for
     - **phone_number**: Phone number for M-Pesa payment
     - **amount**: Payment amount in KES
@@ -51,50 +51,50 @@ async def initiate_payment(
         success, validation_result = await payment_service.validate_payment_request(
             request.booking_id, request.amount, current_user.id, db
         )
-        
+
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=validation_result.get("error", "Payment validation failed")
+                detail=validation_result.get("error", "Payment validation failed"),
             )
-        
+
         # Initiate STK Push
         success, result = await mpesa_service.initiate_stk_push(
             phone_number=request.phone_number,
             amount=request.amount,
             booking_id=request.booking_id,
-            db=db
+            db=db,
         )
-        
+
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.get("error", "Failed to initiate payment")
+                detail=result.get("error", "Failed to initiate payment"),
             )
-        
+
         # Schedule payment timeout check
         background_tasks.add_task(
             payment_service.schedule_payment_timeout_check,
             result["payment_id"],
-            120  # 2 minutes timeout
+            120,  # 2 minutes timeout
         )
-        
+
         return PaymentInitiateResponse(
             success=True,
             payment_id=result["payment_id"],
             checkout_request_id=result.get("checkout_request_id"),
             merchant_request_id=result.get("merchant_request_id"),
             payment_reference=result["payment_reference"],
-            message=result["message"]
+            message=result["message"],
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in initiate_payment endpoint: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail="Internal server error",
         )
 
 
@@ -109,26 +109,24 @@ async def get_payment_status(
     """
     try:
         success, result = await payment_service.get_payment_status(
-            payment_id=payment_id,
-            user_id=current_user.id,
-            db=db
+            payment_id=payment_id, user_id=current_user.id, db=db
         )
-        
+
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=result.get("error", "Payment not found")
+                detail=result.get("error", "Payment not found"),
             )
-        
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in get_payment_status endpoint: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail="Internal server error",
         )
 
 
@@ -144,32 +142,31 @@ async def query_payment_status(
     try:
         if request.checkout_request_id:
             success, result = await mpesa_service.query_stk_push_status(
-                checkout_request_id=request.checkout_request_id,
-                db=db
+                checkout_request_id=request.checkout_request_id, db=db
             )
         else:
             success, result = await payment_service.query_payment_status(
                 payment_id=request.payment_id,
                 payment_reference=request.payment_reference,
                 user_id=current_user.id,
-                db=db
+                db=db,
             )
-        
+
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.get("error", "Failed to query payment status")
+                detail=result.get("error", "Failed to query payment status"),
             )
-        
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in query_payment_status endpoint: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail="Internal server error",
         )
 
 
@@ -189,29 +186,29 @@ async def list_payments(
         success, result = await payment_service.list_payments(
             user_id=current_user.id,
             user_role=current_user.role,
-            fleet_id=getattr(current_user, 'fleet_id', None),
+            fleet_id=getattr(current_user, "fleet_id", None),
             page=page,
             limit=limit,
             status_filter=status_filter,
             booking_id=booking_id,
-            db=db
+            db=db,
         )
-        
+
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.get("error", "Failed to list payments")
+                detail=result.get("error", "Failed to list payments"),
             )
-        
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in list_payments endpoint: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail="Internal server error",
         )
 
 
@@ -225,25 +222,24 @@ async def get_payment_dashboard(
     """
     try:
         success, result = await payment_service.get_payment_dashboard(
-            fleet_id=str(manager.fleet_id),
-            db=db
+            fleet_id=str(manager.fleet_id), db=db
         )
-        
+
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.get("error", "Failed to get dashboard data")
+                detail=result.get("error", "Failed to get dashboard data"),
             )
-        
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in get_payment_dashboard endpoint: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail="Internal server error",
         )
 
 
@@ -255,32 +251,24 @@ async def mpesa_callback(
 ):
     """
     M-Pesa STK Push callback endpoint
-    
+
     This endpoint receives callbacks from M-Pesa after payment processing
     """
     try:
         logger.info(f"Received M-Pesa callback: {callback_data.dict()}")
-        
+
         # Process callback in background to respond quickly to M-Pesa
         background_tasks.add_task(
-            payment_service.process_mpesa_callback,
-            callback_data.dict(),
-            db
+            payment_service.process_mpesa_callback, callback_data.dict(), db
         )
-        
+
         # Return success response to M-Pesa
-        return MpesaCallbackResponse(
-            ResultCode=0,
-            ResultDesc="Success"
-        )
-        
+        return MpesaCallbackResponse(ResultCode=0, ResultDesc="Success")
+
     except Exception as e:
         logger.error(f"Error in mpesa_callback endpoint: {str(e)}")
         # Still return success to M-Pesa to avoid retries
-        return MpesaCallbackResponse(
-            ResultCode=0,
-            ResultDesc="Success"
-        )
+        return MpesaCallbackResponse(ResultCode=0, ResultDesc="Success")
 
 
 @router.post("/refund", response_model=RefundStatusResponse)
@@ -300,24 +288,24 @@ async def initiate_refund(
             refund_notes=request.refund_notes,
             manager_id=str(manager.id),
             fleet_id=str(manager.fleet_id),
-            db=db
+            db=db,
         )
-        
+
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result.get("error", "Failed to initiate refund")
+                detail=result.get("error", "Failed to initiate refund"),
             )
-        
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in initiate_refund endpoint: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail="Internal server error",
         )
 
 
@@ -335,23 +323,23 @@ async def get_refund_status(
             refund_id=refund_id,
             user_id=current_user.id,
             user_role=current_user.role,
-            fleet_id=getattr(current_user, 'fleet_id', None),
-            db=db
+            fleet_id=getattr(current_user, "fleet_id", None),
+            db=db,
         )
-        
+
         if not success:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=result.get("error", "Refund not found")
+                detail=result.get("error", "Refund not found"),
             )
-        
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in get_refund_status endpoint: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail="Internal server error",
         )

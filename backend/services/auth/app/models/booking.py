@@ -250,9 +250,7 @@ class Payment(Base):
     gateway_response = Column(Text, nullable=True)
 
     # Status
-    payment_status = Column(
-        SQLEnum(PaymentStatus), default="pending", nullable=False
-    )
+    payment_status = Column(SQLEnum(PaymentStatus), default="pending", nullable=False)
     processed_at = Column(DateTime(timezone=True), nullable=True)
 
     # Timestamps
