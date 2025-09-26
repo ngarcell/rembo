@@ -4,7 +4,7 @@
 **Story ID**: 3.2  
 **Priority**: P0 (Critical)  
 **Estimated Effort**: 10 Story Points  
-**Status**: 🔄 NOT_STARTED
+**Status**: ✅ COMPLETED
 
 ## 📋 Story Description
 
@@ -13,25 +13,25 @@
 ## 🎯 Acceptance Criteria
 
 ### ✅ **Trip Discovery**
-- [ ] Passenger can search trips by origin, destination, and date
-- [ ] System shows real-time seat availability
-- [ ] Trip details include departure time, fare, vehicle info, and driver
-- [ ] Search results sorted by departure time and relevance
-- [ ] Filter options (price range, departure time, vehicle type)
+- [x] Passenger can search trips by origin, destination, and date
+- [x] System shows real-time seat availability
+- [x] Trip details include departure time, fare, vehicle info, and driver
+- [x] Search results sorted by departure time and relevance
+- [x] Filter options (price range, departure time, vehicle type)
 
 ### ✅ **Seat Booking**
-- [ ] Passenger can select number of seats to book (1-4 seats max)
-- [ ] System prevents overbooking with atomic seat reservation
-- [ ] Booking confirmation provided immediately
-- [ ] Seat reservation held during payment process (15-minute timeout)
-- [ ] Booking details accessible in passenger dashboard
+- [x] Passenger can select number of seats to book (1-4 seats max)
+- [x] System prevents overbooking with atomic seat reservation
+- [x] Booking confirmation provided immediately
+- [x] Seat reservation held during payment process (15-minute timeout)
+- [x] Booking details accessible in passenger dashboard
 
 ### ✅ **Booking Management**
-- [ ] Passenger can view booking history
-- [ ] Booking status tracking (pending, confirmed, completed, cancelled)
-- [ ] Booking modification (before departure, subject to availability)
-- [ ] Booking cancellation with refund policy
-- [ ] SMS/Email notifications for booking updates
+- [x] Passenger can view booking history
+- [x] Booking status tracking (pending, confirmed, completed, cancelled)
+- [x] Booking modification (before departure, subject to availability)
+- [x] Booking cancellation with refund policy
+- [x] SMS/Email notifications for booking updates
 
 ## 🔧 Technical Requirements
 
