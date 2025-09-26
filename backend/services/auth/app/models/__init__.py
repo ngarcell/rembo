@@ -1,4 +1,5 @@
 # Models package
+from .fleet import Fleet
 from .simple_vehicle import SimpleVehicle
 from .simple_driver import SimpleDriver
 from .vehicle_assignment import VehicleAssignment
@@ -28,4 +29,21 @@ from .booking import (
     PaymentStatus,
     PaymentMethod,
     SeatPreference,
+)
+from .payment import (
+    PaymentTransaction,
+    PaymentReceipt,
+    RefundTransaction,
+    PaymentWebhookLog,
+    PaymentStatus as PaymentStatusEnum,
+    PaymentMethod as PaymentMethodEnum,
+    RefundStatus,
+    RefundReason,
+)
+from .trip_status import (
+    TripStatusUpdate,
+    GPSLocation,
+    NotificationPreference,
+    TripStatusEnum,
+    UpdateSourceEnum,
 )

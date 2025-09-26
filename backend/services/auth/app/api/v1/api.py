@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     trip,
     trip_status,
     booking,
+    payments,
 )
 
 api_router = APIRouter()
@@ -39,3 +40,4 @@ api_router.include_router(
 )
 api_router.include_router(trip_status.router, prefix="/manager", tags=["trip-status"])
 api_router.include_router(booking.router, prefix="/passenger", tags=["booking-system"])
+api_router.include_router(payments.router, prefix="/payments", tags=["payment-processing"])

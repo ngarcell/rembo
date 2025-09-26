@@ -190,6 +190,9 @@ class Booking(Base):
     payments = relationship(
         "Payment", back_populates="booking", cascade="all, delete-orphan"
     )
+    payment_transactions = relationship(
+        "PaymentTransaction", back_populates="booking", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Booking(id={self.id}, reference='{self.booking_reference}')>"

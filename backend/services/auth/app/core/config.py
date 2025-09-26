@@ -59,6 +59,26 @@ class Settings(BaseSettings):
     DEFAULT_COUNTRY_CODE: str = "+254"  # Kenya
     PHONE_NUMBER_LENGTH: int = 13  # Including country code
 
+    # M-Pesa Configuration
+    MPESA_ENVIRONMENT: str = "sandbox"  # sandbox or production
+    MPESA_CONSUMER_KEY: str = ""
+    MPESA_CONSUMER_SECRET: str = ""
+    MPESA_BUSINESS_SHORT_CODE: str = "174379"  # Default sandbox shortcode
+    MPESA_LIPA_NA_MPESA_PASSKEY: str = ""
+    MPESA_CALLBACK_URL: str = "https://your-domain.com/api/v1/payments/mpesa/callback"
+
+    # Email Configuration
+    EMAIL_SMTP_HOST: str = ""
+    EMAIL_SMTP_PORT: int = 587
+    EMAIL_SMTP_USER: str = ""
+    EMAIL_SMTP_PASSWORD: str = ""
+    EMAIL_FROM_ADDRESS: str = "noreply@matatu-fleet.com"
+    EMAIL_FROM_NAME: str = "Matatu Fleet Management"
+
+    # Pagination
+    DEFAULT_PAGE_SIZE: int = 20
+    MAX_PAGE_SIZE: int = 100
+
     class Config:
         env_file = ".env"
         case_sensitive = True
