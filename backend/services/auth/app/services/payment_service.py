@@ -18,6 +18,8 @@ from app.models.payment import (
     RefundReason
 )
 from app.models.booking import Booking
+from app.models.trip import Trip
+from app.models.simple_vehicle import SimpleVehicle
 from app.models.user_profile import UserProfile
 from app.services.mpesa_service import MpesaService
 from app.schemas.payment import (
@@ -227,10 +229,12 @@ class PaymentService:
     ) -> Tuple[bool, Dict]:
         """Get payment dashboard data for managers"""
         try:
-            # Get payments for the fleet
+            # Get payments for the fleet through trip -> vehicle -> fleet relationship
             base_query = db.query(PaymentTransaction).join(Booking).join(
-                UserProfile, Booking.passenger_id == UserProfile.id
-            ).filter(UserProfile.fleet_id == fleet_id)
+                Trip, Booking.trip_id == Trip.id
+            ).join(
+                SimpleVehicle, Trip.vehicle_id == SimpleVehicle.id
+            ).filter(SimpleVehicle.fleet_id == fleet_id)
             
             # Calculate metrics
             total_payments = base_query.count()
