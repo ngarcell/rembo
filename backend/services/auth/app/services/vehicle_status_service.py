@@ -417,6 +417,244 @@ class VehicleStatusService:
                 "message": "Failed to retrieve maintenance records",
             }
 
+    @staticmethod
+    def create_vehicle_document(
+        vehicle_id: str,
+        manager_id: str,
+        document_data: Dict[str, Any],
+        db: Session = None,
+    ) -> Tuple[bool, Dict[str, Any]]:
+        """Create a new vehicle document"""
+        try:
+            # Verify access
+            vehicle = (
+                db.query(SimpleVehicle).filter(SimpleVehicle.id == vehicle_id).first()
+            )
+
+            if not vehicle:
+                return False, {
+                    "error_code": "VEHICLE_NOT_FOUND",
+                    "message": "Vehicle not found",
+                }
+
+            manager = db.query(UserProfile).filter(UserProfile.id == manager_id).first()
+            if not manager or str(vehicle.fleet_id) != str(manager.fleet_id):
+                return False, {
+                    "error_code": "ACCESS_DENIED",
+                    "message": "Access denied to this vehicle",
+                }
+
+            # Create document record
+            document = VehicleDocument(
+                vehicle_id=vehicle_id, uploaded_by=manager_id, **document_data
+            )
+
+            db.add(document)
+            db.commit()
+
+            return True, {
+                "message": "Vehicle document created successfully",
+                "document": {
+                    "id": str(document.id),
+                    "vehicle_id": str(document.vehicle_id),
+                    "document_type": document.document_type,
+                    "document_number": document.document_number,
+                    "issuer": document.issuer,
+                    "issued_date": (
+                        document.issued_date.isoformat()
+                        if document.issued_date
+                        else None
+                    ),
+                    "expiry_date": (
+                        document.expiry_date.isoformat()
+                        if document.expiry_date
+                        else None
+                    ),
+                    "is_active": document.is_active,
+                    "is_expired": document.is_expired,
+                    "notes": document.notes,
+                    "uploaded_by": str(document.uploaded_by),
+                    "created_at": document.created_at.isoformat(),
+                    "updated_at": document.updated_at.isoformat(),
+                },
+            }
+
+        except Exception as e:
+            logger.error(f"Create document error: {e}")
+            db.rollback()
+            return False, {
+                "error_code": "CREATE_FAILED",
+                "message": "Failed to create vehicle document",
+            }
+
+    @staticmethod
+    def get_vehicle_documents(
+        vehicle_id: str,
+        manager_id: str,
+        page: int = 1,
+        limit: int = 20,
+        db: Session = None,
+    ) -> Tuple[bool, Dict[str, Any]]:
+        """Get vehicle documents with pagination"""
+        try:
+            # Verify access
+            vehicle = (
+                db.query(SimpleVehicle).filter(SimpleVehicle.id == vehicle_id).first()
+            )
+
+            if not vehicle:
+                return False, {
+                    "error_code": "VEHICLE_NOT_FOUND",
+                    "message": "Vehicle not found",
+                }
+
+            manager = db.query(UserProfile).filter(UserProfile.id == manager_id).first()
+            if not manager or str(vehicle.fleet_id) != str(manager.fleet_id):
+                return False, {
+                    "error_code": "ACCESS_DENIED",
+                    "message": "Access denied to this vehicle",
+                }
+
+            # Get documents with pagination
+            offset = (page - 1) * limit
+
+            query = (
+                db.query(VehicleDocument)
+                .filter(VehicleDocument.vehicle_id == vehicle_id)
+                .order_by(desc(VehicleDocument.created_at))
+            )
+
+            total_count = query.count()
+            documents = query.offset(offset).limit(limit).all()
+
+            # Format response
+            document_list = []
+            for doc in documents:
+                document_list.append(
+                    {
+                        "id": str(doc.id),
+                        "vehicle_id": str(doc.vehicle_id),
+                        "document_type": doc.document_type,
+                        "document_number": doc.document_number,
+                        "issuer": doc.issuer,
+                        "issued_date": (
+                            doc.issued_date.isoformat() if doc.issued_date else None
+                        ),
+                        "expiry_date": (
+                            doc.expiry_date.isoformat() if doc.expiry_date else None
+                        ),
+                        "is_active": doc.is_active,
+                        "is_expired": doc.is_expired,
+                        "file_path": doc.file_path,
+                        "file_name": doc.file_name,
+                        "notes": doc.notes,
+                        "uploaded_by": str(doc.uploaded_by),
+                        "created_at": doc.created_at.isoformat(),
+                        "updated_at": doc.updated_at.isoformat(),
+                    }
+                )
+
+            total_pages = ceil(total_count / limit)
+
+            return True, {
+                "documents": document_list,
+                "total_count": total_count,
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages,
+            }
+
+        except Exception as e:
+            logger.error(f"Get documents error: {e}")
+            return False, {
+                "error_code": "FETCH_FAILED",
+                "message": "Failed to retrieve vehicle documents",
+            }
+
+    @staticmethod
+    def get_fleet_status_dashboard(
+        manager_id: str,
+        fleet_id: str,
+        db: Session = None,
+    ) -> Tuple[bool, Dict[str, Any]]:
+        """Get fleet status dashboard summary"""
+        try:
+            # Verify manager access
+            manager = (
+                db.query(UserProfile)
+                .filter(
+                    and_(UserProfile.id == manager_id, UserProfile.fleet_id == fleet_id)
+                )
+                .first()
+            )
+
+            if not manager:
+                return False, {
+                    "error_code": "ACCESS_DENIED",
+                    "message": "Access denied to this fleet",
+                }
+
+            # Get fleet vehicles
+            vehicles = (
+                db.query(SimpleVehicle).filter(SimpleVehicle.fleet_id == fleet_id).all()
+            )
+
+            # Count vehicles by status
+            total_vehicles = len(vehicles)
+            active_vehicles = sum(1 for v in vehicles if v.status == "active")
+            maintenance_vehicles = sum(1 for v in vehicles if v.status == "maintenance")
+            out_of_service_vehicles = sum(
+                1 for v in vehicles if v.status == "out_of_service"
+            )
+
+            # Count pending maintenance
+            pending_maintenance = (
+                db.query(MaintenanceRecord)
+                .join(SimpleVehicle)
+                .filter(
+                    and_(
+                        SimpleVehicle.fleet_id == fleet_id,
+                        MaintenanceRecord.is_completed == False,
+                    )
+                )
+                .count()
+            )
+
+            # Count overdue maintenance (scheduled date passed)
+            from datetime import datetime
+
+            overdue_maintenance = (
+                db.query(MaintenanceRecord)
+                .join(SimpleVehicle)
+                .filter(
+                    and_(
+                        SimpleVehicle.fleet_id == fleet_id,
+                        MaintenanceRecord.is_completed == False,
+                        MaintenanceRecord.scheduled_date < datetime.utcnow(),
+                    )
+                )
+                .count()
+            )
+
+            return True, {
+                "total_vehicles": total_vehicles,
+                "active_vehicles": active_vehicles,
+                "maintenance_vehicles": maintenance_vehicles,
+                "out_of_service_vehicles": out_of_service_vehicles,
+                "pending_maintenance": pending_maintenance,
+                "overdue_maintenance": overdue_maintenance,
+                "upcoming_inspections": 0,  # TODO: Implement when inspection system is ready
+                "overdue_inspections": 0,  # TODO: Implement when inspection system is ready
+                "compliance_issues": 0,  # TODO: Implement compliance checking
+            }
+
+        except Exception as e:
+            logger.error(f"Get dashboard error: {e}")
+            return False, {
+                "error_code": "FETCH_FAILED",
+                "message": "Failed to retrieve fleet dashboard",
+            }
+
 
 # Create service instance
 vehicle_status_service = VehicleStatusService()
