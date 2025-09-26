@@ -39,24 +39,36 @@ class PaymentService:
         self.mpesa_service = MpesaService()
     
     async def validate_payment_request(
-        self, 
-        booking_id: str, 
-        amount: Decimal, 
+        self,
+        booking_id: str,
+        amount: Decimal,
         user_id: str,
-        db: Session
+        db: Session,
+        user_role: str = "passenger",
+        fleet_id: Optional[str] = None
     ) -> Tuple[bool, Dict]:
         """Validate payment request before processing"""
         try:
-            # Check if booking exists and belongs to user
-            booking = db.query(Booking).filter(
-                and_(
-                    Booking.id == booking_id,
-                    or_(
-                        Booking.passenger_id == user_id,
-                        Booking.passenger_phone == user_id  # Allow phone-based lookup
+            # Check if booking exists with appropriate permissions
+            if user_role == "manager" and fleet_id:
+                # For managers, check if booking belongs to their fleet
+                booking = db.query(Booking).join(Trip).join(SimpleVehicle).filter(
+                    and_(
+                        Booking.id == booking_id,
+                        SimpleVehicle.fleet_id == fleet_id
                     )
-                )
-            ).first()
+                ).first()
+            else:
+                # For passengers, check if booking belongs to user
+                booking = db.query(Booking).filter(
+                    and_(
+                        Booking.id == booking_id,
+                        or_(
+                            Booking.passenger_id == user_id,
+                            Booking.passenger_phone == user_id  # Allow phone-based lookup
+                        )
+                    )
+                ).first()
             
             if not booking:
                 return False, {"error": "Booking not found or access denied"}
@@ -86,7 +98,7 @@ class PaymentService:
             pending_payment = db.query(PaymentTransaction).filter(
                 and_(
                     PaymentTransaction.booking_id == booking_id,
-                    PaymentTransaction.status.in_([PaymentStatus.PENDING, PaymentStatus.PROCESSING]),
+                    PaymentTransaction.status.in_(["pending", "processing"]),
                     PaymentTransaction.expires_at > datetime.utcnow()
                 )
             ).first()
@@ -251,7 +263,7 @@ class PaymentService:
             ).count()
             
             pending_payments = base_query.filter(
-                PaymentTransaction.status.in_([PaymentStatus.PENDING, PaymentStatus.PROCESSING])
+                PaymentTransaction.status.in_(["pending", "processing"])
             ).count()
             
             success_rate = (successful_payments / total_payments * 100) if total_payments > 0 else 0
@@ -381,7 +393,7 @@ class PaymentService:
                 refund_notes=refund_notes,
                 processed_by=manager_id,
                 requires_approval=refund_amount > Decimal('1000.00'),  # Require approval for large refunds
-                status=RefundStatus.PENDING
+                status="pending"
             )
 
             db.add(refund)
@@ -505,7 +517,7 @@ class PaymentService:
                 return False, {"error": "Payment not found or access denied"}
 
             # If payment is still processing, try to query M-Pesa
-            if (payment.status in [PaymentStatus.PENDING, PaymentStatus.PROCESSING] and
+            if (payment.status in ["pending", "processing"] and
                 payment.checkout_request_id):
 
                 success, mpesa_result = await self.mpesa_service.query_stk_push_status(

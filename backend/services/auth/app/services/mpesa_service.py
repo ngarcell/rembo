@@ -153,9 +153,10 @@ class MpesaService:
                 payment_reference=payment_reference,
                 account_reference=payment_reference,
                 transaction_desc=f"Payment for booking {booking_id}",
-                status="pending",
                 expires_at=datetime.utcnow() + timedelta(minutes=2)  # 2 minute timeout
             )
+            # Explicitly set status to avoid enum issues
+            payment_transaction.status = "pending"
             
             db.add(payment_transaction)
             db.flush()  # Get the ID without committing

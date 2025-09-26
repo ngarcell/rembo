@@ -86,7 +86,7 @@ class PaymentTransaction(Base):
     # Transaction tracking
     mpesa_receipt_number = Column(String(100), nullable=True, unique=True)
     transaction_date = Column(DateTime(timezone=True), nullable=True)
-    status = Column(SQLEnum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False)
+    status = Column(SQLEnum(PaymentStatus), default="pending", nullable=False)
     
     # Payment metadata
     account_reference = Column(String(50), nullable=True)
@@ -188,7 +188,7 @@ class RefundTransaction(Base):
     approved_at = Column(DateTime(timezone=True), nullable=True)
     
     # Status tracking
-    status = Column(SQLEnum(RefundStatus), default=RefundStatus.PENDING, nullable=False)
+    status = Column(SQLEnum(RefundStatus), default="pending", nullable=False)
     processed_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
     

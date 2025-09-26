@@ -2,7 +2,9 @@
 Main API router for v1 endpoints
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.core.database import get_db
 from app.api.v1.endpoints import (
     auth,
     login,

@@ -251,7 +251,7 @@ class Payment(Base):
 
     # Status
     payment_status = Column(
-        SQLEnum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False
+        SQLEnum(PaymentStatus), default="pending", nullable=False
     )
     processed_at = Column(DateTime(timezone=True), nullable=True)
 
